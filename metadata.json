@@ -1,0 +1,8 @@
+{
+  "name": "Buku Kas & Iuran IPL Warga",
+  "description": "Sistem manajemen keuangan dan komplek perumahan: master data warga, matriks iuran IPL bulanan & rapel, buku kas pemasukan dan pengeluaran, serta blueprint arsitektur database.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
