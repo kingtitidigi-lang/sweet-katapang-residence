@@ -106,13 +106,13 @@ export function generateWATextReminder(data: {
     `*PENGINGAT IURAN IPL SWEET KATAPANG RESIDENCE*\n\n` +
     `Yth. ${data.nama} (Blok ${data.blok}),\n` +
     `Semoga Bpk/Ibu dan keluarga senantiasa sehat dan bahagia.\n\n` +
-    `Kami dari pengurus RT menginformasikan terkait tagihan Iuran Pengelolaan Lingkungan (IPL):\n` +
+    `Kami dari pengurus menginformasikan terkait tagihan Iuran Pengelolaan Lingkungan (IPL):\n` +
     `🗓 Periode: ${data.bulanStr} ${data.tahun}\n` +
     `💰 Nominal: ${formatRupiah(data.nominal)}\n\n` +
     `Iuran digunakan untuk operasional keamanan (Satpam 24 Jam), kebersihan & sampah, penerangan jalan (PJU), dan pemeliharaan fasum komplek.\n\n` +
     `Pembayaran dapat ditransfer melalui:\n` +
     `🏦 ${data.norek}\n` +
-    `atau tunai melalui Bendahara RT.\n\n` +
+    `atau tunai melalui Bendahara.\n\n` +
     `Mohon konfirmasi setelah melakukan pembayaran. Terima kasih atas kerja sama dan kepedulian Bpk/Ibu demi kenyamanan lingkungan SWEET KATAPANG RESIDENCE.`
   );
 }

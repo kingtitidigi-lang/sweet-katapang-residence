@@ -18,7 +18,7 @@ export type KategoriPengeluaran =
   | 'Kebersihan / Sampah'
   | 'Listrik PJU & Fasum'
   | 'Perbaikan & Maintenance'
-  | 'Operasional RT & ATK'
+  | 'Operasional & ATK'
   | 'Kegiatan & Sosial Warga';
 
 export type KategoriKas = KategoriPemasukan | KategoriPengeluaran;

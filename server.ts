@@ -100,7 +100,7 @@ app.post('/api/ipl/pay', (req, res) => {
   const wargaId = warga.id || `w-${blok}`;
   const safeTanggal = tanggalBayar || new Date().toISOString().split('T')[0];
   const safeMetode = metode || 'Transfer Bank';
-  const safeDiterimaOleh = diterimaOleh || 'Bendahara RT';
+  const safeDiterimaOleh = diterimaOleh || 'Bendahara';
   const txId = `ipl-${blok}-${safeTahun}-${Date.now().toString(36)}`;
 
   const transaction = {

@@ -31,7 +31,7 @@ const KATEGORI_PENGELUARAN: KategoriPengeluaran[] = [
   'Kebersihan / Sampah',
   'Listrik PJU & Fasum',
   'Perbaikan & Maintenance',
-  'Operasional RT & ATK',
+  'Operasional & ATK',
   'Kegiatan & Sosial Warga',
 ];
 
@@ -49,7 +49,7 @@ export const ModalTambahKas: React.FC<ModalTambahKasProps> = ({
   const [tanggal, setTanggal] = useState<string>(getTodayDateStr());
   const [deskripsi, setDeskripsi] = useState<string>('');
   const [metode, setMetode] = useState<'Transfer Bank' | 'Tunai / Cash'>('Transfer Bank');
-  const [penanggungJawab, setPenanggungJawab] = useState<string>('Bendahara RT');
+  const [penanggungJawab, setPenanggungJawab] = useState<string>('Bendahara');
 
   // Reset when initialType or isOpen changes
   React.useEffect(() => {
@@ -132,8 +132,8 @@ export const ModalTambahKas: React.FC<ModalTambahKasProps> = ({
                   setKategori('Donasi Warga');
                 }}
                 className={`py-2 rounded-lg font-bold transition-all text-xs flex items-center justify-center gap-1.5 ${tipe === 'PEMASUKAN'
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
                   }`}
               >
                 <TrendingUp className="w-3.5 h-3.5" />
@@ -146,8 +146,8 @@ export const ModalTambahKas: React.FC<ModalTambahKasProps> = ({
                   setKategori('Keamanan / Satpam');
                 }}
                 className={`py-2 rounded-lg font-bold transition-all text-xs flex items-center justify-center gap-1.5 ${tipe === 'PENGELUARAN'
-                    ? 'bg-rose-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
                   }`}
               >
                 <TrendingDown className="w-3.5 h-3.5" />
@@ -272,8 +272,8 @@ export const ModalTambahKas: React.FC<ModalTambahKasProps> = ({
             <button
               type="submit"
               className={`px-5 py-2 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 ${tipe === 'PEMASUKAN'
-                  ? 'bg-emerald-600 hover:bg-emerald-500'
-                  : 'bg-rose-600 hover:bg-rose-500'
+                ? 'bg-emerald-600 hover:bg-emerald-500'
+                : 'bg-rose-600 hover:bg-rose-500'
                 }`}
             >
               <CheckCircle2 className="w-4 h-4" />

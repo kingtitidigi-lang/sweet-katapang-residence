@@ -170,7 +170,7 @@ export function executeRapelPayment(params: RecordIPLData): {
   const wargaId = warga.id || `w-${blok}`;
   const tanggalBayar = params?.tanggalBayar || new Date().toISOString().split('T')[0];
   const metode = params?.metode || 'Transfer Bank';
-  const diterimaOleh = params?.diterimaOleh || 'Bendahara RT';
+  const diterimaOleh = params?.diterimaOleh || 'Bendahara';
   const catatan = params?.catatan;
 
   const txId = `ipl-${blok}-${tahun}-${Date.now().toString(36)}`;

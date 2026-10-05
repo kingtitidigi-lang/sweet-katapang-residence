@@ -42,7 +42,7 @@ export const WargaMasterView: React.FC<WargaMasterViewProps> = ({
         </div>
         <h3 className="text-base font-bold text-slate-900 mb-1">Akses Khusus Pengurus RT</h3>
         <p className="text-xs text-slate-500 mb-5 leading-relaxed">
-          Master data warga dan kavling SWEET KATAPANG RESIDENCE dilindungi dan hanya dapat diakses oleh Pengurus atau Bendahara RT.
+          Master data warga dan kavling SWEET KATAPANG RESIDENCE dilindungi dan hanya dapat diakses oleh Pengurus atau Bendahara.
         </p>
         <button
           onClick={onRequireLogin}
@@ -264,10 +264,10 @@ export const WargaMasterView: React.FC<WargaMasterViewProps> = ({
                   <td className="py-3 px-4">
                     <span
                       className={`text-[11px] font-semibold px-2 py-0.5 rounded ${w.statusHunian === 'Tetap'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : w.statusHunian === 'Kontrak'
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : w.statusHunian === 'Kontrak'
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                          : 'bg-amber-50 text-amber-700 border border-amber-200'
                         }`}
                     >
                       {w.statusHunian}

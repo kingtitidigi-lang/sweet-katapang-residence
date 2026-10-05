@@ -101,7 +101,7 @@ TX-2026-011,2026-02-09,A06,Ibu Siti Rahmawati,2026,2,2,1,210000,210000,Tunai / C
 2026-02-07,Pengeluaran,Kebersihan / Sampah,Iuran Retribusi Truk Sampah Februari 2026,0,1800000,9105000,Transfer Bank,Ibu Ratna Dewi (Bendahara),OPR-006
 2026-02-09,Pemasukan,Iuran IPL,IPL Blok A06 - Ibu Siti Rahmawati (Februari 2026),210000,0,9315000,Tunai / Cash,Ibu Ratna Dewi (Bendahara),TX-2026-011
 2026-02-10,Pengeluaran,Listrik PJU & Fasum,Token Listrik PJU Lampu Jalan & Pos Satpam Feb 2026,0,620000,8695000,Transfer Bank,Bpk. Budi Santoso (Ketua RT),OPR-007
-2026-02-15,Pengeluaran,Operasional RT & ATK,Kertas HVS Tinta Print Laporan Amplop & Buku Kas,0,280000,8415000,Tunai / Cash,Ibu Ratna Dewi (Bendahara),OPR-008`;
+2026-02-15,Pengeluaran,Operasional & ATK,Kertas HVS Tinta Print Laporan Amplop & Buku Kas,0,280000,8415000,Tunai / Cash,Ibu Ratna Dewi (Bendahara),OPR-008`;
 
     const appsScriptCode = `function onOpen() {
   SpreadsheetApp.getUi().createMenu('⚙️ Keuangan RT 04')
@@ -139,7 +139,7 @@ function onEdit(e) {
     const lastRow = kasSheet.getLastRow();
     const prevSaldo = lastRow > 1 ? Number(kasSheet.getRange(lastRow, 7).getValue()) || 0 : 0;
     
-    kasSheet.appendRow([tgl, 'Pemasukan', 'Iuran IPL', uraian, totalNominal, 0, prevSaldo + Number(totalNominal), metode, 'Bendahara RT', refId]);
+    kasSheet.appendRow([tgl, 'Pemasukan', 'Iuran IPL', uraian, totalNominal, 0, prevSaldo + Number(totalNominal), metode, 'Bendahara', refId]);
     SpreadsheetApp.getActiveSpreadsheet().toast('Otomatis dicatat ke Buku Kas!', 'Berhasil ✅', 4);
   }
 }
@@ -263,8 +263,8 @@ function bukaSheetMatriks() {
                     <button
                         onClick={() => setActiveSheetTab('warga')}
                         className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors flex items-center gap-1.5 ${activeSheetTab === 'warga'
-                                ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
-                                : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
                             }`}
                     >
                         <Table className="w-3.5 h-3.5" />
@@ -274,8 +274,8 @@ function bukaSheetMatriks() {
                     <button
                         onClick={() => setActiveSheetTab('transaksi')}
                         className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors flex items-center gap-1.5 ${activeSheetTab === 'transaksi'
-                                ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
-                                : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
                             }`}
                     >
                         <Table className="w-3.5 h-3.5" />
@@ -285,8 +285,8 @@ function bukaSheetMatriks() {
                     <button
                         onClick={() => setActiveSheetTab('kas')}
                         className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors flex items-center gap-1.5 ${activeSheetTab === 'kas'
-                                ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
-                                : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
                             }`}
                     >
                         <Table className="w-3.5 h-3.5" />
@@ -296,8 +296,8 @@ function bukaSheetMatriks() {
                     <button
                         onClick={() => setActiveSheetTab('script')}
                         className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors flex items-center gap-1.5 ${activeSheetTab === 'script'
-                                ? 'bg-white text-indigo-700 border-t-2 border-indigo-600 shadow-xs'
-                                : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-white text-indigo-700 border-t-2 border-indigo-600 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
                             }`}
                     >
                         <Code2 className="w-3.5 h-3.5 text-indigo-600" />

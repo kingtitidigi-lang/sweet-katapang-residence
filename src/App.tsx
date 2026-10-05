@@ -98,7 +98,7 @@ export default function App() {
     }
   };
 
-  const handleRequireLogin = (reason = 'Hanya Pengurus RT yang dapat mencatat atau mengubah data.') => {
+  const handleRequireLogin = (reason = 'Hanya Pengurus yang dapat mencatat atau mengubah data.') => {
     setLoginReason(reason);
     setIsLoginModalOpen(true);
   };
@@ -401,7 +401,7 @@ export default function App() {
             isLoggedIn={isLoggedIn}
             onOpenIPLModal={() => {
               if (!isLoggedIn) {
-                handleRequireLogin('Silakan login sebagai Pengurus RT untuk mencatat pembayaran iuran IPL.');
+                handleRequireLogin('Silakan login sebagai Pengurus untuk mencatat pembayaran iuran IPL.');
                 return;
               }
               setPreSelectedWargaForIPL(null);
@@ -410,14 +410,14 @@ export default function App() {
             }}
             onOpenKasModal={(type) => {
               if (!isLoggedIn) {
-                handleRequireLogin('Silakan login sebagai Pengurus RT untuk mencatat kas masuk atau keluar.');
+                handleRequireLogin('Silakan login sebagai Pengurus untuk mencatat kas masuk atau keluar.');
                 return;
               }
               setKasModalType(type);
               setIsKasModalOpen(true);
             }}
             onNavigateToTab={setActiveTab}
-            onRequireLogin={() => handleRequireLogin('Silakan login sebagai Pengurus RT untuk mencatat transaksi keuangan.')}
+            onRequireLogin={() => handleRequireLogin('Silakan login sebagai Pengurus untuk mencatat transaksi keuangan.')}
           />
         )}
 
@@ -432,7 +432,7 @@ export default function App() {
             isLoggedIn={isLoggedIn}
             onOpenIPLModalForWarga={(w, month) => {
               if (!isLoggedIn) {
-                handleRequireLogin('Silakan login sebagai Pengurus RT untuk mencatat pembayaran iuran IPL warga.');
+                handleRequireLogin('Silakan login sebagai Pengurus untuk mencatat pembayaran iuran IPL warga.');
                 return;
               }
               setPreSelectedWargaForIPL(w);
@@ -449,7 +449,7 @@ export default function App() {
               setReminderUnpaidMonths(unpaid);
               setIsReminderOpen(true);
             }}
-            onRequireLogin={() => handleRequireLogin('Silakan login sebagai Pengurus RT untuk mencatat pembayaran iuran IPL.')}
+            onRequireLogin={() => handleRequireLogin('Silakan login sebagai Pengurus untuk mencatat pembayaran iuran IPL.')}
           />
         )}
 
@@ -463,7 +463,7 @@ export default function App() {
             isLoggedIn={isLoggedIn}
             onOpenKasModal={(type) => {
               if (!isLoggedIn) {
-                handleRequireLogin('Silakan login sebagai Pengurus RT untuk mencatat transaksi kas.');
+                handleRequireLogin('Silakan login sebagai Pengurus untuk mencatat transaksi kas.');
                 return;
               }
               setKasModalType(type);
@@ -471,12 +471,12 @@ export default function App() {
             }}
             onDeleteTransaction={(id) => {
               if (!isLoggedIn) {
-                handleRequireLogin('Hanya Pengurus RT yang dapat menghapus transaksi kas.');
+                handleRequireLogin('Hanya Pengurus yang dapat menghapus transaksi kas.');
                 return;
               }
               handleDeleteKas(id);
             }}
-            onRequireLogin={() => handleRequireLogin('Silakan login sebagai Pengurus RT untuk mengelola Buku Kas.')}
+            onRequireLogin={() => handleRequireLogin('Silakan login sebagai Pengurus untuk mengelola Buku Kas.')}
           />
         )}
 
@@ -487,7 +487,7 @@ export default function App() {
             isLoggedIn={isLoggedIn}
             onOpenAddModal={() => {
               if (!isLoggedIn) {
-                handleRequireLogin('Silakan login sebagai Pengurus RT untuk menambah warga baru.');
+                handleRequireLogin('Silakan login sebagai Pengurus untuk menambah warga baru.');
                 return;
               }
               setWargaToEdit(null);
@@ -495,7 +495,7 @@ export default function App() {
             }}
             onOpenEditModal={(w) => {
               if (!isLoggedIn) {
-                handleRequireLogin('Silakan login sebagai Pengurus RT untuk mengubah data warga.');
+                handleRequireLogin('Silakan login sebagai Pengurus untuk mengubah data warga.');
                 return;
               }
               setWargaToEdit(w);
@@ -503,12 +503,12 @@ export default function App() {
             }}
             onDeleteWarga={(id) => {
               if (!isLoggedIn) {
-                handleRequireLogin('Silakan login sebagai Pengurus RT untuk menghapus data warga.');
+                handleRequireLogin('Silakan login sebagai Pengurus untuk menghapus data warga.');
                 return;
               }
               handleDeleteWarga(id);
             }}
-            onRequireLogin={() => handleRequireLogin('Silakan login sebagai Pengurus RT untuk mengelola Master Data Warga.')}
+            onRequireLogin={() => handleRequireLogin('Silakan login sebagai Pengurus untuk mengelola Master Data Warga.')}
           />
         )}
 

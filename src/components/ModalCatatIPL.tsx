@@ -38,7 +38,7 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
   const [selectedMonths, setSelectedMonths] = useState<number[]>([]);
   const [tanggalBayar, setTanggalBayar] = useState<string>(getTodayDateStr());
   const [metode, setMetode] = useState<MetodePembayaran>('Transfer Bank');
-  const [diterimaOleh, setDiterimaOleh] = useState<string>('Bendahara RT');
+  const [diterimaOleh, setDiterimaOleh] = useState<string>('Bendahara');
   const [catatan, setCatatan] = useState<string>('');
 
   // Sync when modal opens
@@ -265,10 +265,10 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
                     disabled={paid}
                     onClick={() => toggleMonth(monthNum)}
                     className={`p-2 rounded-lg text-left transition-all border flex flex-col justify-between ${paid
-                        ? 'bg-slate-200/70 border-slate-300 text-slate-400 cursor-not-allowed'
-                        : isSelected
-                          ? 'bg-emerald-500 border-emerald-600 text-white shadow-xs font-bold'
-                          : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-400'
+                      ? 'bg-slate-200/70 border-slate-300 text-slate-400 cursor-not-allowed'
+                      : isSelected
+                        ? 'bg-emerald-500 border-emerald-600 text-white shadow-xs font-bold'
+                        : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-400'
                       }`}
                   >
                     <div className="flex items-center justify-between">

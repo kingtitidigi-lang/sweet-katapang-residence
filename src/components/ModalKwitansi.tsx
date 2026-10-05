@@ -191,7 +191,7 @@ export const ModalKwitansi: React.FC<ModalKwitansiProps> = ({
                 </div>
               </div>
               <div className="font-semibold text-slate-900 border-t border-slate-300 pt-1">
-                {parentTx?.diterimaOleh || 'Bendahara RT'}
+                {parentTx?.diterimaOleh || 'Bendahara'}
               </div>
             </div>
           </div>

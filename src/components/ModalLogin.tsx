@@ -29,7 +29,7 @@ export const ModalLogin: React.FC<ModalLoginProps> = ({
 
         // Username dan password ditetapkan: admin / admin
         if (u === 'admin' && p === 'admin') {
-            onLoginSuccess({ username: 'admin', role: 'Pengurus RT' });
+            onLoginSuccess({ username: 'admin', role: 'Pengurus' });
             setUsername('');
             setPassword('');
             onClose();

@@ -19,7 +19,7 @@ export const ModalReminderWA: React.FC<ModalReminderWAProps> = ({
   selectedYear,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [bankInfo, setBankInfo] = useState('BCA 8730-2219-01 a.n KAS RT SWEET KATAPANG RESIDENCE');
+  const [bankInfo, setBankInfo] = useState('BCA 8730-2219-01 a.n KAS Bendahara SWEET KATAPANG RESIDENCE');
 
   if (!isOpen || !warga) return null;
 
@@ -30,13 +30,13 @@ export const ModalReminderWA: React.FC<ModalReminderWAProps> = ({
     `*PENGINGAT IURAN IPL SWEET KATAPANG RESIDENCE*\n\n` +
     `Yth. ${warga.nama} (Blok ${warga.blok}),\n` +
     `Semoga Bpk/Ibu dan keluarga senantiasa sehat wal'afiat.\n\n` +
-    `Kami dari pengurus RT menginformasikan terkait tagihan Iuran Pengelolaan Lingkungan (IPL):\n` +
+    `Kami dari pengurus menginformasikan terkait tagihan Iuran Pengelolaan Lingkungan (IPL):\n` +
     `🗓 Periode: ${monthNames} ${selectedYear} (${unpaidMonths.length} Bulan)\n` +
     `💰 Total Tagihan: ${formatRupiah(totalDue)}\n\n` +
     `Iuran digunakan untuk operasional satpam keamanan 24 jam, kebersihan/sampah, token listrik PJU fasum, dan pemeliharaan komplek.\n\n` +
     `Pembayaran dapat ditransfer melalui:\n` +
     `🏦 ${bankInfo}\n` +
-    `atau tunai kepada Bendahara RT.\n\n` +
+    `atau tunai kepada Bendahara.\n\n` +
     `Mohon kirimkan bukti transfer setelah pembayaran. Terima kasih banyak atas partisipasi Bpk/Ibu demi lingkungan yang nyaman dan tertata.`;
 
   const handleCopy = () => {
