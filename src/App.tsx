@@ -832,21 +832,6 @@ export default function App() {
         onOpenFirebaseConfig={() => {
           if (currentUser?.role === 'superadmin') {
             setIsFirebaseModalOpen(true);
-          } else if (currentUser?.role === 'admin') {
-            setRestrictedNotice(
-              'Akses Dibatasi: Pengaturan Google Cloud Firestore hanya dapat dibuka oleh Super Admin (Administrator IT). Role Anda saat ini adalah Pengurus (Bendahara).'
-            );
-          } else {
-            handleRequireLogin('Silakan login sebagai Super Admin untuk membuka konfigurasi Google Cloud Firestore.');
-          }
-        }}
-        onRestrictedCloudAccess={(role) => {
-          if (role === 'admin') {
-            setRestrictedNotice(
-              'Akses Dibatasi: Pengaturan Google Cloud Firestore hanya dapat dibuka oleh Super Admin (Administrator IT). Role Anda saat ini adalah Pengurus (Bendahara).'
-            );
-          } else {
-            handleRequireLogin('Silakan login sebagai Super Admin untuk membuka konfigurasi Google Cloud Firestore.');
           }
         }}
         onOpenLogin={() => handleRequireLogin()}
@@ -1075,8 +1060,9 @@ export default function App() {
         selectedYear={selectedYear}
       />
 
+      {/* Modal Pengaturan Cloud Sync (Khusus Super Admin) */}
       <ModalFirebaseConfig
-        isOpen={isFirebaseModalOpen}
+        isOpen={isFirebaseModalOpen && currentUser?.role === 'superadmin'}
         onClose={() => setIsFirebaseModalOpen(false)}
         wargaList={wargaList}
         iplTransactions={iplTransactions}

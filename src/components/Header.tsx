@@ -26,12 +26,11 @@ interface HeaderProps {
   isLoggedIn: boolean;
   currentUser: AuthUser | null;
   isFirebaseConnected: boolean;
-  onOpenFirebaseConfig: () => void;
+  onOpenFirebaseConfig?: () => void;
   onOpenLogin: () => void;
   onLogout: () => void;
   onResetData: () => void;
   onExportBackup: () => void;
-  onRestrictedCloudAccess?: (role: 'admin' | 'guest') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -46,7 +45,6 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout,
   onResetData,
   onExportBackup,
-  onRestrictedCloudAccess,
 }) => {
   const isSuperAdmin = currentUser?.role === 'superadmin';
   const isAdmin = currentUser?.role === 'admin';
@@ -106,28 +104,55 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
 
-            {/* Cloud Sync Status Badge (Non-clickable) */}
-            <div
-              title={
-                isFirebaseConnected
-                  ? 'Status: Cloud Firebase Aktif & Terhubung'
-                  : 'Status: Mode Penyimpanan Lokal (db.json)'
-              }
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border select-none cursor-default ${isFirebaseConnected
-                  ? 'bg-emerald-950/70 text-emerald-300 border-emerald-600/60 shadow-xs'
-                  : 'bg-slate-800 text-amber-300 border-amber-500/40'
+            {/* Cloud Sync: Khusus Super Admin bisa klik untuk Pengaturan Cloud Sync, role lain hanya badge status */}
+            {isSuperAdmin ? (
+              <button
+                onClick={onOpenFirebaseConfig}
+                title={
+                  isFirebaseConnected
+                    ? 'Cloud Firebase Aktif (Klik untuk Pengaturan Cloud Sync)'
+                    : 'Hubungkan ke Database Cloud Firebase (Super Admin)'
+                }
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all border cursor-pointer ${
+                  isFirebaseConnected
+                    ? 'bg-emerald-950/70 text-emerald-300 border-emerald-600/60 hover:bg-emerald-900/80 shadow-xs'
+                    : 'bg-slate-800 text-amber-300 border-amber-500/40 hover:bg-slate-700'
                 }`}
-            >
-              <div className="relative flex items-center">
-                <Cloud className="w-3.5 h-3.5" />
-                {isFirebaseConnected && (
-                  <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping" />
-                )}
+              >
+                <div className="relative flex items-center">
+                  <Cloud className="w-3.5 h-3.5" />
+                  {isFirebaseConnected && (
+                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping" />
+                  )}
+                </div>
+                <span className="hidden sm:inline">
+                  {isFirebaseConnected ? 'Cloud Aktif' : 'Cloud Sync'}
+                </span>
+              </button>
+            ) : (
+              <div
+                title={
+                  isFirebaseConnected
+                    ? 'Status: Cloud Firebase Aktif & Terhubung'
+                    : 'Status: Mode Penyimpanan Lokal (db.json)'
+                }
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border select-none cursor-default pointer-events-none ${
+                  isFirebaseConnected
+                    ? 'bg-emerald-950/70 text-emerald-300 border-emerald-600/60 shadow-xs'
+                    : 'bg-slate-800 text-amber-300 border-amber-500/40'
+                }`}
+              >
+                <div className="relative flex items-center">
+                  <Cloud className="w-3.5 h-3.5" />
+                  {isFirebaseConnected && (
+                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping" />
+                  )}
+                </div>
+                <span className="hidden sm:inline">
+                  {isFirebaseConnected ? 'Cloud Aktif' : 'Cloud Sync'}
+                </span>
               </div>
-              <span className="hidden sm:inline">
-                {isFirebaseConnected ? 'Cloud Aktif' : 'Cloud Sync'}
-              </span>
-            </div>
+            )}
 
             {/* Login / Logout Button */}
             {isLoggedIn ? (

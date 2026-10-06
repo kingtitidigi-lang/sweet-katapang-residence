@@ -28,7 +28,7 @@ export const ModalLogin: React.FC<ModalLoginProps> = ({
         const u = username.trim().toLowerCase();
         const p = password.trim();
 
-        // 1. Akun Super Admin (Administrator IT) -> Punya akses Google Cloud Firestore
+        // 1. Akun Super Admin (Administrator IT) -> Punya akses Pengaturan Cloud Sync
         if (
             (u === 'superadmin' && (p === 'superadmin' || p === 'superadmin123')) ||
             (u === 'supermie' && (p === 'supermie'))
@@ -44,7 +44,7 @@ export const ModalLogin: React.FC<ModalLoginProps> = ({
             return;
         }
 
-        // 2. Akun Admin (Bendahara / Pengurus) -> Tidak bisa membuka konfigurasi Cloud Firestore
+        // 2. Akun Admin (Bendahara / Pengurus) -> Tidak bisa membuka Pengaturan Cloud Sync
         if (
             (u === 'admin' && (p === 'admin' || p === 'admin123')) ||
             (u === 'bendahara' && (p === 'bendahara' || p === 'admin')) ||
