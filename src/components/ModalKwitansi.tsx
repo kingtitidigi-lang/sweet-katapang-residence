@@ -1,6 +1,6 @@
 import React from 'react';
-import { X, Printer, Share2, CheckCircle2, Building2 } from 'lucide-react';
-import { IPLPaymentItem, IPLTransaction } from '../types';
+import { X, Printer, Share2, CheckCircle2, Building2, Clock, Check } from 'lucide-react';
+import { IPLPaymentItem, IPLTransaction, AuthUser, UserRole } from '../types';
 import { formatRupiah, formatTanggalIndo, NAMA_BULAN, cleanPhoneForWA, generateWATextKwitansi } from '../utils/formatters';
 
 interface ModalKwitansiProps {
@@ -9,6 +9,11 @@ interface ModalKwitansiProps {
   item?: IPLPaymentItem | null;
   parentTx?: IPLTransaction | null;
   wargaPhone?: string;
+  isLoggedIn?: boolean;
+  currentUser?: AuthUser | null;
+  userRole?: UserRole;
+  onValidate?: (txId: string) => void;
+  onReject?: (txId: string) => void;
 }
 
 export const ModalKwitansi: React.FC<ModalKwitansiProps> = ({
@@ -17,8 +22,19 @@ export const ModalKwitansi: React.FC<ModalKwitansiProps> = ({
   item,
   parentTx,
   wargaPhone,
+  isLoggedIn = false,
+  currentUser,
+  userRole,
+  onValidate,
+  onReject,
 }) => {
   if (!isOpen || !item) return null;
+
+  const isPengurus = Boolean(
+    currentUser
+      ? currentUser.role === 'admin' || currentUser.role === 'superadmin'
+      : (userRole ? (userRole === 'admin' || userRole === 'superadmin') : isLoggedIn)
+  );
 
   const handlePrint = () => {
     window.print();
@@ -37,6 +53,8 @@ export const ModalKwitansi: React.FC<ModalKwitansiProps> = ({
   const totalNominal = isRapel ? parentTx.totalNominal : item.nominal;
 
   const handleSendWA = () => {
+    if (!isPengurus) return; // Role warga tidak bisa kirim WA
+
     const waText = generateWATextKwitansi({
       nama: item.nama,
       blok: item.blok,
@@ -53,24 +71,51 @@ export const ModalKwitansi: React.FC<ModalKwitansiProps> = ({
     window.open(waUrl, '_blank');
   };
 
+  const isPending = item.status === 'Menunggu Validasi';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
       <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-slate-200 overflow-hidden my-8">
         {/* Top Control Bar (Hidden on print) */}
-        <div className="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between no-print">
+        <div className="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between no-print gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-emerald-400 font-mono">
               {kwitansiNo}
             </span>
+            {isPending && (
+              <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded font-semibold flex items-center gap-1">
+                <Clock className="w-2.5 h-2.5 animate-pulse" />
+                <span>Menunggu Validasi</span>
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleSendWA}
-              className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              <span>Kirim WhatsApp</span>
-            </button>
+            {isPending && isPengurus && parentTx && onValidate && (
+              <button
+                onClick={() => onValidate(parentTx.id)}
+                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Validasi Lunas</span>
+              </button>
+            )}
+            {isPending && isPengurus && parentTx && onReject && (
+              <button
+                onClick={() => onReject(parentTx.id)}
+                className="px-2.5 py-1.5 text-xs font-semibold text-rose-300 bg-rose-950/60 hover:bg-rose-900 border border-rose-800 rounded-lg transition-colors"
+              >
+                Tolak
+              </button>
+            )}
+            {isPengurus && (
+              <button
+                onClick={handleSendWA}
+                className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>Kirim WhatsApp</span>
+              </button>
+            )}
             <button
               onClick={handlePrint}
               className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border border-slate-700"
@@ -89,6 +134,22 @@ export const ModalKwitansi: React.FC<ModalKwitansiProps> = ({
 
         {/* Kwitansi Body (Printable Area) */}
         <div className="p-6 text-slate-800 space-y-4">
+          {/* Status Pending Info Banner */}
+          {isPending && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-900 no-print">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                <div>
+                  <span className="font-bold">Status: Menunggu Validasi Bendahara</span>
+                  <p className="text-[11px] text-amber-700 mt-0.5">
+                    {isPengurus
+                      ? 'Sebagai Bendahara, periksa mutasi bank lalu klik tombol "Validasi Lunas" di atas.'
+                      : 'Konfirmasi pembayaran ini sedang dalam proses verifikasi rekening oleh Bendahara.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Header Surat Kwitansi */}
           <div className="border-b-2 border-slate-900 pb-3 flex items-start justify-between">
             <div className="flex items-center gap-3">
@@ -175,7 +236,7 @@ export const ModalKwitansi: React.FC<ModalKwitansiProps> = ({
             <div>
               <div className="text-[10px] text-slate-500">Warga Pembayar,</div>
               <div className="h-12 flex items-center justify-center text-slate-400 font-serif italic text-xs">
-                (Telah Terverifikasi)
+                {isPending ? '(Konfirmasi Mandiri)' : '(Telah Terverifikasi)'}
               </div>
               <div className="font-semibold text-slate-900 border-t border-slate-300 pt-1">
                 {item.nama}
@@ -185,13 +246,20 @@ export const ModalKwitansi: React.FC<ModalKwitansiProps> = ({
             <div>
               <div className="text-[10px] text-slate-500">Bendahara Penerima,</div>
               <div className="h-12 flex items-center justify-center">
-                <div className="border border-emerald-600/40 bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                  <span>LUNAS VALID</span>
-                </div>
+                {isPending ? (
+                  <div className="border border-amber-500/60 bg-amber-50 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
+                    <span>MENUNGGU VALIDASI</span>
+                  </div>
+                ) : (
+                  <div className="border border-emerald-600/40 bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <span>LUNAS VALID</span>
+                  </div>
+                )}
               </div>
               <div className="font-semibold text-slate-900 border-t border-slate-300 pt-1">
-                {parentTx?.diterimaOleh || 'Bendahara'}
+                {parentTx?.diterimaOleh || (isPending ? 'Menunggu Validasi' : 'Bendahara')}
               </div>
             </div>
           </div>

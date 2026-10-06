@@ -1,8 +1,10 @@
 export type AppTab = 'dashboard' | 'matriks' | 'kas' | 'warga' | 'arsitektur' | 'nocode';
 
-export type StatusHunian = 'Tetap' | 'Kontrak' | 'Kosong';
+export type StatusHunian = 'Dihuni' | 'Kosong' | 'Tetap' | 'Kontrak';
 
-export type MetodePembayaran = 'Transfer Bank' | 'Tunai / Cash' | 'QRIS RT';
+export type IPLStatus = 'Lunas' | 'Menunggu Validasi';
+
+export type MetodePembayaran = 'Transfer Bank' | 'Tunai / Cash' | 'QRIS';
 
 export type TipeTransaksi = 'PEMASUKAN' | 'PENGELUARAN';
 
@@ -47,6 +49,7 @@ export interface IPLPaymentItem {
   tanggalBayar: string; // YYYY-MM-DD
   metode: MetodePembayaran;
   isRapel: boolean;
+  status: IPLStatus; // 'Lunas' | 'Menunggu Validasi'
   catatan?: string;
   buktiRef?: string;
 }
@@ -63,8 +66,12 @@ export interface IPLTransaction {
   tanggalBayar: string;
   metode: MetodePembayaran;
   keterangan: string;
+  status: IPLStatus; // 'Lunas' | 'Menunggu Validasi'
   kasTransactionId?: string; // id transaksi di Buku Kas
   diterimaOleh: string;
+  submittedBy?: 'warga' | 'pengurus';
+  validatedAt?: string;
+  validatedBy?: string;
 }
 
 export interface RecordIPLData {
@@ -75,6 +82,8 @@ export interface RecordIPLData {
   metode: MetodePembayaran;
   catatan?: string;
   diterimaOleh: string;
+  status?: IPLStatus;
+  submittedBy?: 'warga' | 'pengurus';
 }
 
 // Rekor Buku Kas Arus Kas (Pemasukan / Pengeluaran)
@@ -104,4 +113,12 @@ export interface SummaryKeuangan {
   iplTerkumpulBulanIni: number;
   iplTargetBulanIni: number;
   persentaseKolektibilitas: number;
+}
+
+export type UserRole = 'superadmin' | 'admin' | 'warga';
+
+export interface AuthUser {
+  username: string;
+  role: UserRole;
+  roleLabel: string;
 }

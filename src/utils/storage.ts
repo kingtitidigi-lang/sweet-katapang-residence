@@ -32,10 +32,28 @@ export function loadInitialData(): AppStateData {
     const iplItemsStr = localStorage.getItem(STORAGE_KEYS.IPL_ITEMS);
     const kasTxStr = localStorage.getItem(STORAGE_KEYS.KAS_TRANSACTIONS);
 
+    const wargaRaw: any[] = wargaStr ? JSON.parse(wargaStr) : INITIAL_WARGA;
+    const normalizedWarga: Warga[] = wargaRaw.map((w) => ({
+      ...w,
+      statusHunian: w.statusHunian === 'Kosong' ? 'Kosong' : 'Dihuni',
+    }));
+
+    const rawTxs: any[] = iplTxStr ? JSON.parse(iplTxStr) : [];
+    const normalizedTxs: IPLTransaction[] = rawTxs.map((t) => ({
+      ...t,
+      status: t.status || 'Lunas',
+    }));
+
+    const rawItems: any[] = iplItemsStr ? JSON.parse(iplItemsStr) : [];
+    const normalizedItems: IPLPaymentItem[] = rawItems.map((item) => ({
+      ...item,
+      status: item.status || 'Lunas',
+    }));
+
     return {
-      warga: wargaStr ? JSON.parse(wargaStr) : INITIAL_WARGA,
-      iplTransactions: iplTxStr ? JSON.parse(iplTxStr) : [],
-      iplItems: iplItemsStr ? JSON.parse(iplItemsStr) : [],
+      warga: normalizedWarga,
+      iplTransactions: normalizedTxs,
+      iplItems: normalizedItems,
       kasTransactions: kasTxStr ? JSON.parse(kasTxStr) : [],
     };
   } catch (err) {

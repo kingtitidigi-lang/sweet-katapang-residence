@@ -90,7 +90,7 @@ export function generateWATextKwitansi(data: {
     `💳 Metode: ${data.metode}\n` +
     `📅 Tgl Bayar: ${formatTanggalIndo(data.tanggal)}\n` +
     `Status: *LUNAS (Terverifikasi)*\n\n` +
-    `Semoga lingkungan komplek SWEET KATAPANG RESIDENCE senantiasa aman, asri, dan guyub rukun. Salam hangat pengurus RT.`
+    `Semoga lingkungan komplek SWEET KATAPANG RESIDENCE senantiasa aman, asri, dan guyub rukun. Salam hangat pengurus.`
   );
 }
 

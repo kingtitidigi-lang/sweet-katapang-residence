@@ -12,9 +12,21 @@ import {
   Sparkles,
   Receipt,
   MessageCircle,
+  Clock,
 } from 'lucide-react';
-import { Warga, IPLPaymentItem, IPLTransaction } from '../types';
+import { Warga, IPLPaymentItem, IPLTransaction, AuthUser } from '../types';
 import { NAMA_BULAN_PENDEK, NAMA_BULAN, formatRupiah } from '../utils/formatters';
+
+export const normalizeDisplayStatus = (status?: string): string => {
+  const s = (status || '').trim().toLowerCase();
+  if (s === 'tetap' || s === 'kontrak' || s === 'dihuni') {
+    return 'Dihuni';
+  }
+  if (s === 'kosong') {
+    return 'Kosong';
+  }
+  return status || 'Dihuni';
+};
 
 interface IPLMatrixViewProps {
   wargaList: Warga[];
@@ -23,10 +35,13 @@ interface IPLMatrixViewProps {
   selectedYear: number;
   setSelectedYear: (year: number) => void;
   isLoggedIn?: boolean;
+  currentUser?: AuthUser | null;
   onOpenIPLModalForWarga: (warga: Warga, defaultMonth?: number) => void;
   onViewKwitansi: (item: IPLPaymentItem, tx?: IPLTransaction) => void;
   onOpenReminderWA: (warga: Warga, unpaidMonths: number[]) => void;
   onRequireLogin?: () => void;
+  onValidateIPL?: (transactionId: string) => void;
+  onRejectIPL?: (transactionId: string) => void;
 }
 
 export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
@@ -36,14 +51,21 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
   selectedYear,
   setSelectedYear,
   isLoggedIn = false,
+  currentUser = null,
   onOpenIPLModalForWarga,
   onViewKwitansi,
   onOpenReminderWA,
   onRequireLogin,
+  onValidateIPL,
+  onRejectIPL,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBlokFilter, setSelectedBlokFilter] = useState('Semua');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('Semua');
+
+  const isPengurus =
+    Boolean(isLoggedIn && currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin'));
+  const canValidate = isPengurus;
 
   // Map to quickly lookup payment by `${wargaId}-${tahun}-${bulan}`
   const paymentMap = useMemo(() => {
@@ -76,8 +98,9 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
         selectedBlokFilter === 'Semua' ||
         w.blok.toUpperCase().startsWith(selectedBlokFilter);
 
+      const displayStatus = normalizeDisplayStatus(w.statusHunian);
       const matchStatus =
-        selectedStatusFilter === 'Semua' || w.statusHunian === selectedStatusFilter;
+        selectedStatusFilter === 'Semua' || displayStatus === selectedStatusFilter;
 
       return matchSearch && matchBlok && matchStatus;
     });
@@ -85,25 +108,30 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
 
   // Compute monthly stats for columns
   const monthlyStats = useMemo(() => {
-    const stats: { lunas: number; belumLunas: number; kosong: number }[] = [];
+    const stats: { lunas: number; validasi: number; belumLunas: number; kosong: number }[] = [];
     for (let month = 1; month <= 12; month++) {
       let lunas = 0;
+      let validasi = 0;
       let belumLunas = 0;
       let kosong = 0;
 
       filteredWarga.forEach((w) => {
-        if (w.statusHunian === 'Kosong') {
+        if (normalizeDisplayStatus(w.statusHunian) === 'Kosong') {
           kosong++;
         } else {
           const item = paymentMap.get(`${w.id}-${selectedYear}-${month}`);
           if (item) {
-            lunas++;
+            if (item.status === 'Menunggu Validasi') {
+              validasi++;
+            } else {
+              lunas++;
+            }
           } else {
             belumLunas++;
           }
         }
       });
-      stats.push({ lunas, belumLunas, kosong });
+      stats.push({ lunas, validasi, belumLunas, kosong });
     }
     return stats;
   }, [filteredWarga, paymentMap, selectedYear]);
@@ -112,21 +140,27 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
   const handleExportCSV = () => {
     let csv = `Blok,Nama Warga,Status Hunian,Tarif IPL,${NAMA_BULAN.join(',')},Total Lunas\n`;
     filteredWarga.forEach((w) => {
+      const displayStatus = normalizeDisplayStatus(w.statusHunian);
+      const isKosong = displayStatus === 'Kosong';
       const row = [
         `"${w.blok}"`,
         `"${w.nama}"`,
-        `"${w.statusHunian}"`,
+        `"${displayStatus}"`,
         w.tarifIPL,
       ];
       let paidCount = 0;
       for (let m = 1; m <= 12; m++) {
-        if (w.statusHunian === 'Kosong') {
+        if (isKosong) {
           row.push('"KOSONG"');
         } else {
           const item = paymentMap.get(`${w.id}-${selectedYear}-${m}`);
           if (item) {
-            row.push(item.isRapel ? '"LUNAS (Rapel)"' : '"LUNAS"');
-            paidCount++;
+            if (item.status === 'Menunggu Validasi') {
+              row.push('"MENUNGGU VALIDASI"');
+            } else {
+              row.push(item.isRapel ? '"LUNAS (Rapel)"' : '"LUNAS"');
+              paidCount++;
+            }
           } else {
             row.push('"BELUM LUNAS"');
           }
@@ -178,23 +212,23 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
             ))}
           </div>
 
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Ekspor CSV</span>
-          </button>
-
-          {isLoggedIn && (
+          {isPengurus && (
             <button
-              onClick={() => onOpenIPLModalForWarga(filteredWarga[0] || wargaList[0])}
-              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs shadow-xs transition-all"
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors"
             >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>+ Catat Bayar IPL</span>
+              <Download className="w-3.5 h-3.5" />
+              <span>Ekspor CSV</span>
             </button>
           )}
+
+          <button
+            onClick={() => onOpenIPLModalForWarga(filteredWarga[0] || wargaList[0])}
+            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs shadow-xs transition-all"
+          >
+            <PlusCircle className="w-3.5 h-3.5" />
+            <span>{isLoggedIn ? '+ Catat Bayar IPL' : '+ Catat Bayar IPL Warga'}</span>
+          </button>
         </div>
       </div>
 
@@ -240,8 +274,7 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
             className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500"
           >
             <option value="Semua">Semua Status</option>
-            <option value="Tetap">Tetap</option>
-            <option value="Kontrak">Kontrak</option>
+            <option value="Dihuni">Dihuni</option>
             <option value="Kosong">Kosong</option>
           </select>
         </div>
@@ -255,6 +288,10 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
           <div className="flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded bg-amber-400"></span>
             <span>Rapel</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded bg-amber-200 border border-amber-400"></span>
+            <span>Menunggu Validasi</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded bg-rose-200"></span>
@@ -300,15 +337,23 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
 
             <tbody className="divide-y divide-slate-100">
               {filteredWarga.map((w) => {
+                const displayStatus = normalizeDisplayStatus(w.statusHunian);
+                const isKosong = displayStatus === 'Kosong';
+
                 // Find unpaid months for this resident
                 const unpaidMonths: number[] = [];
-                if (w.statusHunian !== 'Kosong') {
+                if (!isKosong) {
                   for (let m = 1; m <= 12; m++) {
                     if (!paymentMap.has(`${w.id}-${selectedYear}-${m}`)) {
                       unpaidMonths.push(m);
                     }
                   }
                 }
+
+                // Check pending transaction for quick validation
+                const pendingTxForWarga = iplTransactions.find(
+                  (t) => t.wargaId === w.id && t.status === 'Menunggu Validasi'
+                );
 
                 return (
                   <tr key={w.id} className="hover:bg-slate-50/90 transition-colors">
@@ -326,14 +371,13 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
                       </div>
                       <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-0.5">
                         <span
-                          className={`px-1 rounded ${w.statusHunian === 'Tetap'
+                          className={`px-1 rounded ${
+                            displayStatus === 'Dihuni'
                               ? 'text-emerald-700 bg-emerald-50'
-                              : w.statusHunian === 'Kontrak'
-                                ? 'text-blue-700 bg-blue-50'
-                                : 'text-amber-700 bg-amber-50'
-                            }`}
+                              : 'text-amber-700 bg-amber-50'
+                          }`}
                         >
-                          {w.statusHunian}
+                          {displayStatus}
                         </span>
                         <span>·</span>
                         <span>{formatRupiah(w.tarifIPL)}</span>
@@ -344,7 +388,7 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
                     {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
                       const item = paymentMap.get(`${w.id}-${selectedYear}-${month}`);
 
-                      if (w.statusHunian === 'Kosong') {
+                      if (isKosong) {
                         return (
                           <td
                             key={month}
@@ -358,6 +402,7 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
                       }
 
                       if (item) {
+                        const isPending = item.status === 'Menunggu Validasi';
                         return (
                           <td
                             key={month}
@@ -370,48 +415,65 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
                                 );
                                 onViewKwitansi(item, parentTx);
                               }}
-                              title={`Lunas ${formatRupiah(item.nominal)} (${item.metode}) - Klik lihat kwitansi`}
-                              className={`w-full py-1 rounded text-[11px] font-bold flex flex-col items-center justify-center transition-all ${item.isRapel
-                                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80'
-                                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300/80'
+                              title={
+                                isPending
+                                  ? canValidate
+                                    ? `Menunggu Validasi: ${formatRupiah(item.nominal)} - Klik untuk validasi menjadi LUNAS atau lihat kwitansi`
+                                    : `Menunggu Validasi Bendahara: ${formatRupiah(item.nominal)} - Klik lihat kwitansi/detail`
+                                  : `Lunas ${formatRupiah(item.nominal)} (${item.metode}) - Klik lihat kwitansi`
+                              }
+                              className={`w-full py-1 rounded text-[11px] font-bold flex flex-col items-center justify-center transition-all ${isPending
+                                  ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 shadow-xs'
+                                  : item.isRapel
+                                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80'
+                                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300/80'
                                 }`}
                             >
-                              <div className="flex items-center gap-0.5">
-                                <CheckCircle2 className="w-3 h-3 text-emerald-600 inline" />
-                                <span>Lunas</span>
-                              </div>
-                              {item.isRapel && (
-                                <span className="text-[8px] text-amber-700 font-semibold leading-none">
-                                  Rapel
-                                </span>
+                              {isPending ? (
+                                <>
+                                  <div className="flex items-center gap-0.5">
+                                    <Clock className="w-3 h-3 text-amber-600 inline animate-pulse" />
+                                    <span>Validasi</span>
+                                  </div>
+                                  <span className="text-[8px] text-amber-700 font-semibold leading-none">
+                                    Menunggu
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="flex items-center gap-0.5">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600 inline" />
+                                    <span>Lunas</span>
+                                  </div>
+                                  {item.isRapel && (
+                                    <span className="text-[8px] text-amber-700 font-semibold leading-none">
+                                      Rapel
+                                    </span>
+                                  )}
+                                </>
                               )}
                             </button>
                           </td>
                         );
                       }
 
-                      // Unpaid Cell
+                      // Unpaid Cell (Bisa dicatat oleh Pengurus langsung lunas, atau dilaporkan oleh Warga)
                       return (
                         <td
                           key={month}
                           className="py-2 px-1 text-center border-r border-slate-100 bg-rose-50/30"
                         >
-                          {isLoggedIn ? (
-                            <button
-                              onClick={() => onOpenIPLModalForWarga(w, month)}
-                              title={`Belum Lunas: Klik untuk catat bayar bulan ${month}`}
-                              className="w-full py-1 text-[10px] font-semibold text-rose-600 hover:text-slate-900 hover:bg-rose-100/70 rounded transition-colors"
-                            >
-                              + Bayar
-                            </button>
-                          ) : (
-                            <span
-                              title="Belum Lunas"
-                              className="inline-block px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 bg-rose-100/60 rounded"
-                            >
-                              Belum
-                            </span>
-                          )}
+                          <button
+                            onClick={() => onOpenIPLModalForWarga(w, month)}
+                            title={
+                              isLoggedIn
+                                ? `Belum Lunas: Klik untuk catat bayar bulan ${month}`
+                                : `Belum Lunas: Klik untuk konfirmasi/lapor bayar bulan ${month} (Mode Warga)`
+                            }
+                            className="w-full py-1 text-[10px] font-semibold text-rose-600 hover:text-slate-900 hover:bg-rose-100/70 rounded transition-colors"
+                          >
+                            + Bayar
+                          </button>
                         </td>
                       );
                     })}
@@ -420,6 +482,29 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
                     {isLoggedIn && (
                       <td className="py-2 px-3 text-center">
                         <div className="flex items-center justify-center gap-1.5">
+                          {pendingTxForWarga && onValidateIPL && canValidate && (
+                            <button
+                              onClick={() => {
+                                if (
+                                  window.confirm(
+                                    `Validasi pembayaran IPL Blok ${w.blok} (${w.nama}) sebesar ${formatRupiah(
+                                      pendingTxForWarga.totalNominal
+                                    )} menjadi LUNAS?`
+                                  )
+                                ) {
+                                  onValidateIPL(pendingTxForWarga.id);
+                                }
+                              }}
+                              title={`Validasi IPL Blok ${w.blok} (${formatRupiah(
+                                pendingTxForWarga.totalNominal
+                              )}) langsung menjadi Lunas`}
+                              className="px-2 py-1 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold rounded text-[11px] flex items-center gap-1 shadow-xs transition-colors"
+                            >
+                              <CheckCircle2 className="w-3 h-3 text-slate-950" />
+                              <span>Validasi</span>
+                            </button>
+                          )}
+
                           <button
                             onClick={() => onOpenIPLModalForWarga(w)}
                             title="Bayar Rapel Multi-Bulan"
@@ -429,7 +514,7 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
                             <span>Rapel</span>
                           </button>
 
-                          {unpaidMonths.length > 0 && w.statusHunian !== 'Kosong' && (
+                          {unpaidMonths.length > 0 && !isKosong && (
                             <button
                               onClick={() => onOpenReminderWA(w, unpaidMonths)}
                               title="Kirim Pesan Pengingat WhatsApp"
@@ -468,7 +553,7 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
                 ))}
                 {isLoggedIn && (
                   <td className="py-2 px-3 text-center text-slate-500 text-[10px]">
-                    Rekapitulasi RT
+                    Rekapitulasi
                   </td>
                 )}
               </tr>

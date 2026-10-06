@@ -17,7 +17,7 @@ export const ModalWarga: React.FC<ModalWargaProps> = ({
 }) => {
   const [blok, setBlok] = useState('');
   const [nama, setNama] = useState('');
-  const [statusHunian, setStatusHunian] = useState<StatusHunian>('Tetap');
+  const [statusHunian, setStatusHunian] = useState<StatusHunian>('Dihuni');
   const [noHp, setNoHp] = useState('');
   const [tarifIPL, setTarifIPL] = useState<number>(210000);
   const [keterangan, setKeterangan] = useState('');
@@ -26,14 +26,14 @@ export const ModalWarga: React.FC<ModalWargaProps> = ({
     if (wargaToEdit) {
       setBlok(wargaToEdit.blok);
       setNama(wargaToEdit.nama);
-      setStatusHunian(wargaToEdit.statusHunian);
+      setStatusHunian(wargaToEdit.statusHunian || 'Dihuni');
       setNoHp(wargaToEdit.noHp || '');
       setTarifIPL(wargaToEdit.tarifIPL || 210000);
       setKeterangan(wargaToEdit.keterangan || '');
     } else {
       setBlok('');
       setNama('');
-      setStatusHunian('Tetap');
+      setStatusHunian('Dihuni');
       setNoHp('');
       setTarifIPL(210000);
       setKeterangan('');
@@ -113,8 +113,9 @@ export const ModalWarga: React.FC<ModalWargaProps> = ({
                 onChange={(e) => setStatusHunian(e.target.value as StatusHunian)}
                 className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold"
               >
-                <option value="Tetap">Tetap (Pemilik)</option>
-                <option value="Kontrak">Kontrak (Penyewa)</option>
+                <option value="Dihuni">Dihuni</option>
+                <option value="Tetap">Tetap (Dihuni)</option>
+                <option value="Kontrak">Kontrak (Dihuni)</option>
                 <option value="Kosong">Kosong (Belum Dihuni)</option>
               </select>
             </div>
@@ -169,7 +170,7 @@ export const ModalWarga: React.FC<ModalWargaProps> = ({
             </label>
             <input
               type="text"
-              placeholder="Contoh: Pengurus RT, seksi keamanan, rumah sewa"
+              placeholder="Contoh: Pengurus, seksi keamanan, rumah sewa"
               value={keterangan}
               onChange={(e) => setKeterangan(e.target.value)}
               className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs"

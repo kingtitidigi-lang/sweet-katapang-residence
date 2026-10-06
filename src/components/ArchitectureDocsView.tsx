@@ -27,13 +27,13 @@ export const ArchitectureDocsView: React.FC = () => {
   };
 
   const sqlDDL = `-- ========================================================
--- SISTEM MANAJEMEN BUKU KAS & IURAN IPL WARGA RT/RW
+-- SISTEM MANAJEMEN BUKU KAS & IURAN IPL WARGA
 -- Database Dialect: PostgreSQL / Supabase
 -- ========================================================
 
 -- 1. ENUM TYPES
-CREATE TYPE enum_status_hunian AS ENUM ('Tetap', 'Kontrak', 'Kosong');
-CREATE TYPE enum_metode_bayar AS ENUM ('Transfer Bank', 'Tunai / Cash', 'QRIS RT');
+CREATE TYPE enum_status_hunian AS ENUM ('Dihuni', 'Kosong');
+CREATE TYPE enum_metode_bayar AS ENUM ('Transfer Bank', 'Tunai / Cash', 'QRIS');
 CREATE TYPE enum_tipe_kas AS ENUM ('PEMASUKAN', 'PENGELUARAN');
 
 -- 2. TABEL: master_warga
@@ -42,7 +42,7 @@ CREATE TABLE master_warga (
     id VARCHAR(36) PRIMARY KEY,
     blok VARCHAR(10) NOT NULL UNIQUE, -- Contoh: 'A01', 'B02', 'C11'
     nama VARCHAR(150) NOT NULL,
-    status_hunian enum_status_hunian NOT NULL DEFAULT 'Tetap',
+    status_hunian enum_status_hunian NOT NULL DEFAULT 'Dihuni',
     no_hp VARCHAR(20),
     tarif_ipl NUMERIC(12, 2) NOT NULL DEFAULT 210000.00,
     keterangan TEXT,
@@ -234,7 +234,7 @@ ORDER BY tanggal DESC, id DESC;`;
                 <ul className="text-xs text-slate-600 mt-2 space-y-1 font-mono text-[11px]">
                   <li>• <strong className="text-slate-900">id</strong> (PK, UUID)</li>
                   <li>• <strong className="text-slate-900">blok</strong> (UNIQUE, indexed, e.g. 'A01')</li>
-                  <li>• nama, status_hunian (Tetap/Kontrak/Kosong)</li>
+                  <li>• nama, status_hunian (Dihuni/Kosong)</li>
                   <li>• no_hp (WhatsApp untuk kwitansi/reminder)</li>
                   <li>• tarif_ipl (Numeric, default Rp 210.000)</li>
                 </ul>
@@ -329,7 +329,7 @@ ORDER BY tanggal DESC, id DESC;`;
 
             <div className="mt-4 space-y-4 text-xs text-slate-600 leading-relaxed">
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-900">
-                <strong>Tantangan Akuntansi RT/RW:</strong> Saat seorang warga membayar 3 bulan sekaligus (misal Januari, Februari, Maret) pada tanggal 5 Januari sebesar <strong>Rp 630.000</strong>:
+                <strong>Tantangan Akuntansi Iuran Lingkungan:</strong> Saat seorang warga membayar 3 bulan sekaligus (misal Januari, Februari, Maret) pada tanggal 5 Januari sebesar <strong>Rp 630.000</strong>:
                 <ul className="list-disc pl-5 mt-1 space-y-1">
                   <li><strong>Kas Riil (Cash-Basis):</strong> Uang Rp 630.000 fisik diterima dan masuk rekening pada bulan Januari. Maka buku kas harus mencatat pemasukan Rp 630.000 pada Januari agar saldo bank klop.</li>
                   <li><strong>Laporan Bulanan (Accrual/Matriks):</strong> Pada bulan Februari dan Maret, warga tersebut tidak boleh ditagih lagi ("LUNAS"). Matriks pembayaran harus menampilkan status Lunas untuk ketiga bulan tersebut.</li>
@@ -403,7 +403,7 @@ ORDER BY tanggal DESC, id DESC;`;
                   Google Workspace Ecosystem
                 </h4>
                 <p className="text-xs text-slate-600 mt-1">
-                  Cocok untuk RT/RW skala kecil (&lt; 80 rumah) dengan bendahara non-programmer yang mengutamakan kemudahan operasional langsung.
+                  Cocok untuk komplek lingkungan skala kecil (&lt; 80 rumah) dengan bendahara non-programmer yang mengutamakan kemudahan operasional langsung.
                 </p>
 
                 <div className="mt-4 space-y-2 text-xs">

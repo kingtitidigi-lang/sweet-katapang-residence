@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { X, Lock, KeyRound, AlertCircle } from 'lucide-react';
+import { X, Lock, KeyRound, AlertCircle, ShieldCheck, UserCheck } from 'lucide-react';
+import { AuthUser } from '../types';
 
 interface ModalLoginProps {
     isOpen: boolean;
     onClose: () => void;
-    onLoginSuccess: (user: { username: string; role: string }) => void;
+    onLoginSuccess: (user: AuthUser) => void;
     reason?: string;
 }
 
@@ -27,15 +28,39 @@ export const ModalLogin: React.FC<ModalLoginProps> = ({
         const u = username.trim().toLowerCase();
         const p = password.trim();
 
-        // Username dan password ditetapkan: admin / admin
-        if (u === 'admin' && p === 'admin') {
-            onLoginSuccess({ username: 'admin', role: 'Pengurus' });
+        // 1. Akun Super Admin (Administrator IT) -> Punya akses Google Cloud Firestore
+        if (
+            (u === 'superadmin' && (p === 'superadmin' || p === 'superadmin123')) ||
+            (u === 'ketua' && (p === 'superadmin' || p === 'ketua'))
+        ) {
+            onLoginSuccess({
+                username: u,
+                role: 'superadmin',
+                roleLabel: 'Super Admin (Administrator IT)',
+            });
             setUsername('');
             setPassword('');
             onClose();
-        } else {
-            setErrorMsg('Username atau Password salah. Silakan periksa kembali.');
+            return;
         }
+
+        // 2. Akun Admin (Bendahara / Pengurus) -> Tidak bisa membuka konfigurasi Cloud Firestore
+        if (
+            (u === 'admin' && (p === 'admin' || p === 'admin123')) ||
+            (u === 'bendahara' && (p === 'bendahara' || p === 'admin'))
+        ) {
+            onLoginSuccess({
+                username: u,
+                role: 'admin',
+                roleLabel: 'Pengurus (Bendahara)',
+            });
+            setUsername('');
+            setPassword('');
+            onClose();
+            return;
+        }
+
+        setErrorMsg('Username atau Password salah. Gunakan kredensial resmi pengurus atau tombol bantuan di bawah.');
     };
 
     return (
@@ -49,7 +74,7 @@ export const ModalLogin: React.FC<ModalLoginProps> = ({
                             <Lock className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="font-extrabold text-base text-white">Login Pengurus RT</h3>
+                            <h3 className="font-extrabold text-base text-white">Login Pengurus</h3>
                             <p className="text-xs text-emerald-400 font-medium">SWEET KATAPANG RESIDENCE</p>
                         </div>
                     </div>
@@ -72,10 +97,6 @@ export const ModalLogin: React.FC<ModalLoginProps> = ({
                             </div>
                         </div>
                     )}
-
-                    <p className="text-xs text-slate-600 mb-5 leading-relaxed">
-                        Silakan masukkan kredensial pengurus untuk dapat melakukan pencatatan transaksi, mengelola buku kas, dan mengubah data warga.
-                    </p>
 
                     {errorMsg && (
                         <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
@@ -118,11 +139,54 @@ export const ModalLogin: React.FC<ModalLoginProps> = ({
                             className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 mt-2"
                         >
                             <KeyRound className="w-4 h-4" />
-                            <span>Masuk sebagai Pengurus</span>
+                            <span>Masuk Sekarang</span>
                         </button>
                     </form>
+
+                    {/* Quick preset buttons */}
+                    <div className="mt-5 pt-4 border-t border-slate-100">
+                        <p className="text-[11px] font-semibold text-slate-500 mb-2">Pilih Akun Cepat:</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setUsername('superadmin');
+                                    setPassword('superadmin');
+                                }}
+                                className="p-2.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-900 rounded-xl text-left transition-colors"
+                            >
+                                <div className="flex items-center gap-1.5 font-bold text-xs">
+                                    <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
+                                    <span>Super Admin</span>
+                                </div>
+                                <div className="text-[10px] text-purple-700 mt-0.5">
+                                    <code>superadmin</code> / <code>superadmin</code> <br />
+                                    <span className="font-semibold text-purple-900">Akses Penuh + Tab Arsitektur & Template</span>
+                                </div>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setUsername('admin');
+                                    setPassword('admin');
+                                }}
+                                className="p-2.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 rounded-xl text-left transition-colors"
+                            >
+                                <div className="flex items-center gap-1.5 font-bold text-xs">
+                                    <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                                    <span>Admin (Bendahara)</span>
+                                </div>
+                                <div className="text-[10px] text-blue-700 mt-0.5">
+                                    <code>admin</code> / <code>admin</code> <br />
+                                    <span className="text-slate-600">Validasi Lunas, Kas & Warga (Tanpa Tab Arsitektur)</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
+

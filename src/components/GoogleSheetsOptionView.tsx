@@ -35,34 +35,34 @@ export const GoogleSheetsOptionView: React.FC = () => {
     };
 
     const csvMasterWarga = `ID_Warga,Blok,Nama_Warga,Status_Hunian,No_WhatsApp,Tarif_IPL,Keterangan
-W-01,A01,Teh Keny,Tetap,081234567801,210000,
-W-02,A02,Bu Suhartati,Tetap,081234567802,210000,
-W-03,A05,Pa Harry,Tetap,081234567805,210000,
-W-04,A07,Pa Jajang,Tetap,081234567807,210000,
-W-05,A08,Pa Teja,Tetap,081234567808,210000,
-W-06,A09,Bu cucu,Tetap,081234567809,210000,
-W-07,A10,Pa Mondi,Tetap,081234567810,210000,
-W-08,A11,Pa Sidik,Tetap,081234567811,210000,
-W-09,A12,Pa Iyan,Tetap,081234567812,210000,
-W-10,A15,Th Dillah,Tetap,081234567815,210000,
-W-11,A16,Rosa,Tetap,081234567816,210000,
-W-12,A18,Pa Riki,Tetap,081234567818,210000,
-W-13,B01,Teh Martha,Tetap,081234567821,210000,
-W-14,B02,Pa Ghani,Tetap,081234567822,210000,
-W-15,B03,BPK Penabur,Tetap,081234567823,210000,
-W-16,C01,Pa Farid,Tetap,081234567831,210000,
-W-17,C03,Pa Sahid,Tetap,081234567833,210000,
-W-18,C05,Pa Bakti,Tetap,081234567835,210000,
-W-19,C06,Pa Afif,Tetap,081234567836,210000,
-W-20,C07,Pa Encep,Tetap,081234567837,210000,
-W-21,C08,Pa dede,Tetap,081234567838,210000,
-W-22,C09,Pa Alfin,Tetap,081234567839,210000,
-W-23,C10,Teh Dewi,Tetap,081234567840,210000,
-W-24,C11,Pa Tio,Tetap,081234567841,210000,
-W-25,C12,Pa wim,Tetap,081234567842,210000,
-W-26,C15,Teh Niknik,Tetap,081234567845,210000,
-W-27,C16,Th Wida,Kontrak,081234567846,210000,Kontrak
-W-28,C17,Th Ria,Kontrak,081234567847,210000,Kontrak
+W-01,A01,Teh Keny,Dihuni,081234567801,210000,
+W-02,A02,Bu Suhartati,Dihuni,081234567802,210000,
+W-03,A05,Pa Harry,Dihuni,081234567805,210000,
+W-04,A07,Pa Jajang,Dihuni,081234567807,210000,
+W-05,A08,Pa Teja,Dihuni,081234567808,210000,
+W-06,A09,Bu cucu,Dihuni,081234567809,210000,
+W-07,A10,Pa Mondi,Dihuni,081234567810,210000,
+W-08,A11,Pa Sidik,Dihuni,081234567811,210000,
+W-09,A12,Pa Iyan,Dihuni,081234567812,210000,
+W-10,A15,Th Dillah,Dihuni,081234567815,210000,
+W-11,A16,Rosa,Dihuni,081234567816,210000,
+W-12,A18,Pa Riki,Dihuni,081234567818,210000,
+W-13,B01,Teh Martha,Dihuni,081234567821,210000,
+W-14,B02,Pa Ghani,Dihuni,081234567822,210000,
+W-15,B03,BPK Penabur,Dihuni,081234567823,210000,
+W-16,C01,Pa Farid,Dihuni,081234567831,210000,
+W-17,C03,Pa Sahid,Dihuni,081234567833,210000,
+W-18,C05,Pa Bakti,Dihuni,081234567835,210000,
+W-19,C06,Pa Afif,Dihuni,081234567836,210000,
+W-20,C07,Pa Encep,Dihuni,081234567837,210000,
+W-21,C08,Pa dede,Dihuni,081234567838,210000,
+W-22,C09,Pa Alfin,Dihuni,081234567839,210000,
+W-23,C10,Teh Dewi,Dihuni,081234567840,210000,
+W-24,C11,Pa Tio,Dihuni,081234567841,210000,
+W-25,C12,Pa wim,Dihuni,081234567842,210000,
+W-26,C15,Teh Niknik,Dihuni,081234567845,210000,
+W-27,C16,Th Wida,Dihuni,081234567846,210000,
+W-28,C17,Th Ria,Dihuni,081234567847,210000,
 W-29,ZA03,A3,Kosong,,210000,Kavling Kosong A3
 W-30,ZA06,A6,Kosong,,210000,Kavling Kosong A6
 W-31,ZC02,C2,Kosong,,210000,Kavling Kosong C2`;
@@ -70,41 +70,41 @@ W-31,ZC02,C2,Kosong,,210000,Kavling Kosong C2`;
     const csvTransaksiIPL = `ID_Transaksi,Tanggal_Bayar,Blok,Nama_Warga,Tahun,Bulan_Mulai,Bulan_Selesai,Jumlah_Bulan,Tarif_Per_Bulan,Total_Nominal,Metode,Status,Catatan
 TX-2026-001,2026-01-03,A01,Bpk. Budi Santoso,2026,1,6,6,210000,1260000,Transfer Bank,Lunas,Rapel Semester 1 (Jan - Jun)
 TX-2026-002,2026-01-04,A02,Ibu Ratna Dewi,2026,1,12,12,210000,2520000,Transfer Bank,Lunas,Lunas 1 Tahun Penuh 2026
-TX-2026-003,2026-01-05,A03,Bpk. Irwan Syahputra,2026,1,1,1,210000,210000,QRIS RT,Lunas,IPL Januari 2026
+TX-2026-003,2026-01-05,A03,Bpk. Irwan Syahputra,2026,1,1,1,210000,210000,QRIS,Lunas,IPL Januari 2026
 TX-2026-004,2026-01-07,A05,Bpk. Hendra Gunawan,2026,1,3,3,210000,630000,Transfer Bank,Lunas,Rapel Triwulan 1 (Jan - Mar)
 TX-2026-005,2026-01-10,A06,Ibu Siti Rahmawati,2026,1,1,1,210000,210000,Tunai / Cash,Lunas,IPL Januari 2026
 TX-2026-006,2026-01-02,B01,Bpk. Agus Prasetyo,2026,1,3,3,210000,630000,Transfer Bank,Lunas,Rapel Jan - Mar
 TX-2026-007,2026-01-08,B02,Ibu Maya Indah,2026,1,1,1,210000,210000,Transfer Bank,Lunas,IPL Januari 2026
-TX-2026-008,2026-01-09,B03,Bpk. Anton Nugroho,2026,1,2,2,210000,420000,QRIS RT,Lunas,Rapel Jan - Feb
+TX-2026-008,2026-01-09,B03,Bpk. Anton Nugroho,2026,1,2,2,210000,420000,QRIS,Lunas,Rapel Jan - Feb
 TX-2026-009,2026-01-06,C01,Bpk. Wawan Kurniawan,2026,1,4,4,210000,840000,Transfer Bank,Lunas,Rapel 4 Bulan (Jan - Apr)
-TX-2026-010,2026-02-04,A03,Bpk. Irwan Syahputra,2026,2,2,1,210000,210000,QRIS RT,Lunas,IPL Februari 2026
+TX-2026-010,2026-02-04,A03,Bpk. Irwan Syahputra,2026,2,2,1,210000,210000,QRIS,Lunas,IPL Februari 2026
 TX-2026-011,2026-02-09,A06,Ibu Siti Rahmawati,2026,2,2,1,210000,210000,Tunai / Cash,Lunas,IPL Februari 2026`;
 
     const csvBukuKas = `Tanggal,Tipe,Kategori,Uraian_Transaksi,Masuk,Keluar,Saldo_Berjalan,Metode,Penanggung_Jawab,Ref_Transaksi
-2026-01-01,Pemasukan,Saldo Awal,Saldo kas tutup buku kas RT tahun 2025,14500000,0,14500000,Transfer Bank,Ibu Ratna Dewi (Bendahara),SALDO-2025
+2026-01-01,Pemasukan,Saldo Awal,Saldo kas tutup buku tahun 2025,14500000,0,14500000,Transfer Bank,Ibu Ratna Dewi (Bendahara),SALDO-2025
 2026-01-02,Pemasukan,Iuran IPL,IPL Blok B01 - Bpk. Agus Prasetyo (Rapel Jan - Mar),630000,0,15130000,Transfer Bank,Ibu Ratna Dewi (Bendahara),TX-2026-006
 2026-01-03,Pemasukan,Iuran IPL,IPL Blok A01 - Bpk. Budi Santoso (Rapel 6 Bulan Jan - Jun),1260000,0,16390000,Transfer Bank,Ibu Ratna Dewi (Bendahara),TX-2026-001
 2026-01-04,Pemasukan,Iuran IPL,IPL Blok A02 - Ibu Ratna Dewi (Lunas 1 Tahun Penuh 2026),2520000,0,18910000,Transfer Bank,Ibu Ratna Dewi (Bendahara),TX-2026-002
-2026-01-05,Pemasukan,Iuran IPL,IPL Blok A03 - Bpk. Irwan Syahputra (Januari 2026),210000,0,19120000,QRIS RT,Ibu Ratna Dewi (Bendahara),TX-2026-003
+2026-01-05,Pemasukan,Iuran IPL,IPL Blok A03 - Bpk. Irwan Syahputra (Januari 2026),210000,0,19120000,QRIS,Ibu Ratna Dewi (Bendahara),TX-2026-003
 2026-01-05,Pengeluaran,Keamanan / Satpam,Honor Gaji 2 Petugas Satpam Komplek Periode Januari 2026,0,4500000,14620000,Transfer Bank,Bpk. Agus Prasetyo (Keamanan),OPR-001
 2026-01-06,Pemasukan,Iuran IPL,IPL Blok C01 - Bpk. Wawan Kurniawan (Rapel Jan - Apr),840000,0,15460000,Transfer Bank,Ibu Ratna Dewi (Bendahara),TX-2026-009
 2026-01-06,Pengeluaran,Kebersihan / Sampah,Retribusi Armada Truk Sampah DLH & Upah Petugas Jan 2026,0,1800000,13660000,Transfer Bank,Ibu Ratna Dewi (Bendahara),OPR-002
 2026-01-07,Pemasukan,Iuran IPL,IPL Blok A05 - Bpk. Hendra Gunawan (Rapel Triwulan 1),630000,0,14290000,Transfer Bank,Ibu Ratna Dewi (Bendahara),TX-2026-004
 2026-01-08,Pemasukan,Iuran IPL,IPL Blok B02 - Ibu Maya Indah (Januari 2026),210000,0,14500000,Transfer Bank,Ibu Ratna Dewi (Bendahara),TX-2026-007
-2026-01-08,Pengeluaran,Listrik PJU & Fasum,Token Listrik Lampu Jalan Komplek & Pompa Air Taman Fasum,0,685000,13815000,Transfer Bank,Bpk. Budi Santoso (Ketua RT),OPR-003
-2026-01-09,Pemasukan,Iuran IPL,IPL Blok B03 - Bpk. Anton Nugroho (Rapel Jan - Feb),420000,0,14235000,QRIS RT,Ibu Ratna Dewi (Bendahara),TX-2026-008
+2026-01-08,Pengeluaran,Listrik PJU & Fasum,Token Listrik Lampu Jalan Komplek & Pompa Air Taman Fasum,0,685000,13815000,Transfer Bank,Bpk. Budi Santoso (Ketua),OPR-003
+2026-01-09,Pemasukan,Iuran IPL,IPL Blok B03 - Bpk. Anton Nugroho (Rapel Jan - Feb),420000,0,14235000,QRIS,Ibu Ratna Dewi (Bendahara),TX-2026-008
 2026-01-10,Pemasukan,Iuran IPL,IPL Blok A06 - Ibu Siti Rahmawati (Januari 2026),210000,0,14445000,Tunai / Cash,Ibu Ratna Dewi (Bendahara),TX-2026-005
 2026-01-14,Pemasukan,Donasi Warga,Donasi swadaya warga Blok A untuk penanaman tabebuya fasum,1500000,0,15945000,Transfer Bank,Ibu Ratna Dewi (Bendahara),DON-001
 2026-01-20,Pengeluaran,Perbaikan & Maintenance,Service motor palang gerbang otomatis & ganti kabel sensor,0,750000,15195000,Tunai / Cash,Bpk. Agus Prasetyo (Keamanan),OPR-004
-2026-02-04,Pemasukan,Iuran IPL,IPL Blok A03 - Bpk. Irwan Syahputra (Februari 2026),210000,0,15405000,QRIS RT,Ibu Ratna Dewi (Bendahara),TX-2026-010
+2026-02-04,Pemasukan,Iuran IPL,IPL Blok A03 - Bpk. Irwan Syahputra (Februari 2026),210000,0,15405000,QRIS,Ibu Ratna Dewi (Bendahara),TX-2026-010
 2026-02-05,Pengeluaran,Keamanan / Satpam,Honor Gaji 2 Petugas Satpam Komplek Periode Februari 2026,0,4500000,10905000,Transfer Bank,Bpk. Agus Prasetyo (Keamanan),OPR-005
 2026-02-07,Pengeluaran,Kebersihan / Sampah,Iuran Retribusi Truk Sampah Februari 2026,0,1800000,9105000,Transfer Bank,Ibu Ratna Dewi (Bendahara),OPR-006
 2026-02-09,Pemasukan,Iuran IPL,IPL Blok A06 - Ibu Siti Rahmawati (Februari 2026),210000,0,9315000,Tunai / Cash,Ibu Ratna Dewi (Bendahara),TX-2026-011
-2026-02-10,Pengeluaran,Listrik PJU & Fasum,Token Listrik PJU Lampu Jalan & Pos Satpam Feb 2026,0,620000,8695000,Transfer Bank,Bpk. Budi Santoso (Ketua RT),OPR-007
+2026-02-10,Pengeluaran,Listrik PJU & Fasum,Token Listrik PJU Lampu Jalan & Pos Satpam Feb 2026,0,620000,8695000,Transfer Bank,Bpk. Budi Santoso (Ketua),OPR-007
 2026-02-15,Pengeluaran,Operasional & ATK,Kertas HVS Tinta Print Laporan Amplop & Buku Kas,0,280000,8415000,Tunai / Cash,Ibu Ratna Dewi (Bendahara),OPR-008`;
 
     const appsScriptCode = `function onOpen() {
-  SpreadsheetApp.getUi().createMenu('⚙️ Keuangan RT 04')
+  SpreadsheetApp.getUi().createMenu('⚙️ Keuangan Komplek')
     .addItem('🔄 Hitung Ulang Saldo Kas', 'hitungUlangSaldoKas')
     .addItem('📋 Buka Matriks Pembayaran', 'bukaSheetMatriks')
     .addToUi();
@@ -171,7 +171,7 @@ function bukaSheetMatriks() {
         downloadFile('Master_Warga.csv', csvMasterWarga);
         setTimeout(() => downloadFile('Transaksi_IPL.csv', csvTransaksiIPL), 300);
         setTimeout(() => downloadFile('Buku_Kas.csv', csvBukuKas), 600);
-        setTimeout(() => downloadFile('Kode_Otomasi_RT.gs', appsScriptCode, 'text/plain;charset=utf-8;'), 900);
+        setTimeout(() => downloadFile('Kode_Otomasi_Keuangan.gs', appsScriptCode, 'text/plain;charset=utf-8;'), 900);
     };
 
     return (
@@ -190,7 +190,7 @@ function bukaSheetMatriks() {
                             Paket Template Siap Pakai: Google Sheets + Apps Script + Looker Studio
                         </h2>
                         <p className="text-xs text-slate-300 mt-1 max-w-3xl leading-relaxed">
-                            Semua berkas spreadsheet telah disiapkan lengkap dengan 26 data kavling RT 04, histori pembayaran rapel, rumus saldo kas berjalan, dan script otomatisasi WhatsApp.
+                            Semua berkas spreadsheet telah disiapkan lengkap dengan 26 data kavling warga, histori pembayaran rapel, rumus saldo kas berjalan, dan script otomatisasi WhatsApp.
                         </p>
                     </div>
 
@@ -220,7 +220,7 @@ function bukaSheetMatriks() {
                             <span>Buat Spreadsheet</span>
                         </div>
                         <p className="text-slate-600 text-[11px]">
-                            Buka Google Drive, buat Google Sheet baru: <code>Sistem Keuangan RT 04</code>.
+                            Buka Google Drive, buat Google Sheet baru: <code>Sistem Keuangan Lingkungan</code>.
                         </p>
                     </div>
 
@@ -263,8 +263,8 @@ function bukaSheetMatriks() {
                     <button
                         onClick={() => setActiveSheetTab('warga')}
                         className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors flex items-center gap-1.5 ${activeSheetTab === 'warga'
-                            ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
+                                ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900'
                             }`}
                     >
                         <Table className="w-3.5 h-3.5" />
@@ -274,8 +274,8 @@ function bukaSheetMatriks() {
                     <button
                         onClick={() => setActiveSheetTab('transaksi')}
                         className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors flex items-center gap-1.5 ${activeSheetTab === 'transaksi'
-                            ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
+                                ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900'
                             }`}
                     >
                         <Table className="w-3.5 h-3.5" />
@@ -285,8 +285,8 @@ function bukaSheetMatriks() {
                     <button
                         onClick={() => setActiveSheetTab('kas')}
                         className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors flex items-center gap-1.5 ${activeSheetTab === 'kas'
-                            ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
+                                ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900'
                             }`}
                     >
                         <Table className="w-3.5 h-3.5" />
@@ -296,8 +296,8 @@ function bukaSheetMatriks() {
                     <button
                         onClick={() => setActiveSheetTab('script')}
                         className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors flex items-center gap-1.5 ${activeSheetTab === 'script'
-                            ? 'bg-white text-indigo-700 border-t-2 border-indigo-600 shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
+                                ? 'bg-white text-indigo-700 border-t-2 border-indigo-600 shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900'
                             }`}
                     >
                         <Code2 className="w-3.5 h-3.5 text-indigo-600" />
@@ -312,7 +312,7 @@ function bukaSheetMatriks() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h4 className="text-sm font-bold text-slate-900">Sheet: Master_Warga</h4>
-                                    <p className="text-xs text-slate-500">22 unit kavling siap pakai (Blok A, B, C) dengan status Tetap, Kontrak, dan Kosong.</p>
+                                    <p className="text-xs text-slate-500">22 unit kavling siap pakai (Blok A, B, C) dengan status Dihuni dan Kosong.</p>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
@@ -470,7 +470,7 @@ function bukaSheetMatriks() {
                         </div>
 
                         <ul className="text-xs text-slate-600 mt-4 space-y-1.5">
-                            <li>• Kunjungi <strong>lookerstudio.google.com</strong> &gt; hubungkan ke file Google Sheet kas RT.</li>
+                            <li>• Kunjungi <strong>lookerstudio.google.com</strong> &gt; hubungkan ke file Google Sheet buku kas.</li>
                             <li>• Pasang kartu metrik: <code>Saldo Kas Riil</code>, <code>Kas Masuk</code>, <code>Kas Keluar</code>.</li>
                             <li>• Warga cukup klik link untuk memantau kas komplek tanpa bisa mengubah atau merusak rumus.</li>
                         </ul>

@@ -14,7 +14,7 @@ import {
   CheckCircle2,
   Lock,
 } from 'lucide-react';
-import { KasTransaction, SummaryKeuangan } from '../types';
+import { KasTransaction, SummaryKeuangan, AuthUser } from '../types';
 import { formatRupiah, formatTanggalIndo, NAMA_BULAN } from '../utils/formatters';
 
 interface CashBookViewProps {
@@ -23,6 +23,7 @@ interface CashBookViewProps {
   selectedMonth: number;
   summary: SummaryKeuangan;
   isLoggedIn?: boolean;
+  currentUser?: AuthUser | null;
   onOpenKasModal: (type: 'PEMASUKAN' | 'PENGELUARAN') => void;
   onDeleteTransaction: (id: string) => void;
   onRequireLogin?: () => void;
@@ -34,17 +35,22 @@ export const CashBookView: React.FC<CashBookViewProps> = ({
   selectedMonth,
   summary,
   isLoggedIn = false,
+  currentUser,
   onOpenKasModal,
   onDeleteTransaction,
   onRequireLogin,
 }) => {
-  if (!isLoggedIn) {
+  const isPengurus = Boolean(
+    isLoggedIn && (!currentUser || currentUser.role !== 'warga')
+  );
+
+  if (!isPengurus) {
     return (
       <div className="bg-white rounded-2xl p-10 text-center border border-slate-200 shadow-sm max-w-md mx-auto my-12">
         <div className="w-14 h-14 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Lock className="w-7 h-7" />
         </div>
-        <h3 className="text-base font-bold text-slate-900 mb-1">Buku Kas Khusus Pengurus RT</h3>
+        <h3 className="text-base font-bold text-slate-900 mb-1">Buku Kas Khusus Pengurus</h3>
         <p className="text-xs text-slate-500 mb-5 leading-relaxed">
           Pencatatan mutasi kas masuk dan keluar secara terperinci dilindungi untuk menjaga integritas data bendahara.
         </p>
@@ -53,7 +59,7 @@ export const CashBookView: React.FC<CashBookViewProps> = ({
           className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-2 mx-auto"
         >
           <Lock className="w-3.5 h-3.5" />
-          <span>Login Pengurus RT</span>
+          <span>Login Pengurus</span>
         </button>
       </div>
     );
@@ -133,7 +139,7 @@ export const CashBookView: React.FC<CashBookViewProps> = ({
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `Buku_Kas_RT04_${selectedYear}_${selectedMonth || 'Semua'}.csv`;
+    link.download = `Buku_Kas_${selectedYear}_${selectedMonth || 'Semua'}.csv`;
     link.click();
   };
 
@@ -176,13 +182,15 @@ export const CashBookView: React.FC<CashBookViewProps> = ({
             <span>+ Catat Biaya Keluar</span>
           </button>
 
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg text-xs transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>CSV</span>
-          </button>
+          {isPengurus && (
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg text-xs transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>CSV</span>
+            </button>
+          )}
 
           <button
             onClick={handlePrint}

@@ -18,8 +18,10 @@ import {
   Home,
   Check,
   ChevronRight,
+  Clock,
+  Lock,
 } from 'lucide-react';
-import { SummaryKeuangan, KasTransaction, Warga, AppTab } from '../types';
+import { SummaryKeuangan, KasTransaction, Warga, AppTab, IPLTransaction, IPLPaymentItem, AuthUser } from '../types';
 import { formatRupiah, formatTanggalIndo, NAMA_BULAN } from '../utils/formatters';
 
 interface DashboardViewProps {
@@ -29,8 +31,13 @@ interface DashboardViewProps {
   selectedYear: number;
   selectedMonth: number;
   isLoggedIn?: boolean;
+  currentUser?: AuthUser | null;
+  pendingIPLTransactions?: IPLTransaction[];
   onOpenIPLModal: () => void;
   onOpenKasModal: (type: 'PEMASUKAN' | 'PENGELUARAN') => void;
+  onValidateIPL?: (transactionId: string) => void;
+  onRejectIPL?: (transactionId: string) => void;
+  onViewKwitansiForTx?: (tx: IPLTransaction) => void;
   onNavigateToTab: (tab: AppTab) => void;
   onRequireLogin?: () => void;
 }
@@ -42,11 +49,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   selectedYear,
   selectedMonth,
   isLoggedIn = false,
+  currentUser,
+  pendingIPLTransactions = [],
   onOpenIPLModal,
   onOpenKasModal,
+  onValidateIPL,
+  onRejectIPL,
+  onViewKwitansiForTx,
   onNavigateToTab,
   onRequireLogin,
 }) => {
+  const isPengurus = Boolean(
+    currentUser
+      ? currentUser.role === 'admin' || currentUser.role === 'superadmin'
+      : isLoggedIn
+  );
   const periodeLabel =
     selectedMonth === 0
       ? `Tahun ${selectedYear}`
@@ -91,7 +108,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="text-xs uppercase tracking-wider text-slate-300 font-semibold">
-              {isLoggedIn ? 'Panel Cepat Pengurus RT' : 'Transparansi Keuangan Warga'}
+              {isLoggedIn ? 'Panel Cepat Pengurus' : 'Transparansi Keuangan Warga'}
             </span>
           </div>
           <h2 className="text-xl font-extrabold text-white mt-1">
@@ -112,7 +129,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3.5 py-2 rounded-xl text-xs shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>Catat Bayar IPL (Rapel/Bulanan)</span>
+                <span>Catat Bayar IPL (Bendahara)</span>
               </button>
 
               <button
@@ -132,16 +149,136 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </button>
             </>
           ) : (
-            <button
-              onClick={onRequireLogin}
-              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Login Pengurus untuk Catat Kas</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={onOpenIPLModal}
+                className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Catat Pembayaran Iuran IPL Warga</span>
+              </button>
+
+              {onRequireLogin && (
+                <button
+                  onClick={onRequireLogin}
+                  className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-semibold px-3 py-2 rounded-xl text-xs transition-colors"
+                >
+                  <Lock className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Login Pengurus / Bendahara</span>
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
+
+      {/* Pending Validation Alert Card for Bendahara & Warga */}
+      {pendingIPLTransactions && pendingIPLTransactions.length > 0 && (
+        <div className="bg-amber-50/90 border-2 border-amber-300/80 rounded-2xl p-5 shadow-sm space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
+                <Clock className="w-4 h-4 animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-amber-950">
+                  {isLoggedIn
+                    ? `Perhatian Bendahara: Ada ${pendingIPLTransactions.length} Pembayaran IPL Menunggu Validasi`
+                    : `Antrean Konfirmasi Pembayaran IPL (${pendingIPLTransactions.length} Menunggu Validasi Bendahara)`}
+                </h3>
+                <p className="text-xs text-amber-800">
+                  {isLoggedIn
+                    ? 'Warga telah mengisi konfirmasi bayar. Silakan periksa mutasi rekening, lalu klik "Validasi Lunas" agar masuk ke Buku Kas.'
+                    : 'Data pembayaran mandiri warga yang telah dilaporkan dan sedang menunggu verifikasi oleh Bendahara.'}
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-mono font-bold px-2.5 py-1 bg-amber-200/80 text-amber-900 rounded-lg self-start sm:self-auto">
+              {pendingIPLTransactions.length} Pengajuan
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+            {pendingIPLTransactions.map((tx) => (
+              <div
+                key={tx.id}
+                className="bg-white rounded-xl p-4 border border-amber-200 shadow-xs flex flex-col justify-between gap-3 hover:border-amber-300 transition-colors"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-xs bg-slate-900 text-white px-2 py-0.5 rounded">
+                        Blok {tx.blok}
+                      </span>
+                      <span className="font-bold text-xs text-slate-900">
+                        {tx.nama}
+                      </span>
+                    </div>
+                    <span className="text-xs font-mono font-extrabold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                      {formatRupiah(tx.totalNominal)}
+                    </span>
+                  </div>
+
+                  <div className="mt-2.5 text-xs text-slate-600 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Bulan:</span>
+                      <span className="font-semibold text-slate-800">
+                        {tx.bulanList.map((m) => NAMA_BULAN[m - 1]).join(', ')} ({tx.tahun})
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Metode & Tanggal:</span>
+                      <span>{tx.metode} · {formatTanggalIndo(tx.tanggalBayar)}</span>
+                    </div>
+                    {tx.keterangan && (
+                      <div className="text-[11px] text-slate-500 italic bg-slate-50 p-1.5 rounded mt-1 border border-slate-100">
+                        "{tx.keterangan}"
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  {onViewKwitansiForTx && (
+                    <button
+                      onClick={() => onViewKwitansiForTx(tx)}
+                      className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                    >
+                      Lihat Kwitansi
+                    </button>
+                  )}
+                  {isLoggedIn ? (
+                    <>
+                      {onRejectIPL && (
+                        <button
+                          onClick={() => onRejectIPL(tx.id)}
+                          className="px-2.5 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors"
+                        >
+                          Tolak
+                        </button>
+                      )}
+                      {onValidateIPL && (
+                        <button
+                          onClick={() => onValidateIPL(tx.id)}
+                          className="px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 shadow-xs rounded-lg transition-all flex items-center gap-1.5"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Validasi Lunas</span>
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-[11px] text-amber-700 font-medium italic flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-amber-600" />
+                      <span>Menunggu verifikasi Bendahara</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -299,25 +436,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Profil Master Kavling
             </span>
-            <div className="grid grid-cols-3 gap-2 mt-3 text-center">
-              <div className="bg-emerald-50 rounded-lg p-2.5 border border-emerald-100">
-                <div className="text-lg font-bold text-emerald-700">
-                  {wargaList.filter((w) => w.statusHunian === 'Tetap').length}
+            <div className="grid grid-cols-2 gap-3 mt-3 text-center">
+              <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
+                <div className="text-xl font-bold text-emerald-700">
+                  {summary.kavlingTerisi}
                 </div>
-                <div className="text-[11px] text-emerald-800 font-medium">Tetap</div>
-              </div>
-              <div className="bg-blue-50 rounded-lg p-2.5 border border-blue-100">
-                <div className="text-lg font-bold text-blue-700">
-                  {wargaList.filter((w) => w.statusHunian === 'Kontrak').length}
+                <div className="text-xs text-emerald-800 font-medium mt-0.5">Dihuni</div>
+                <div className="text-[10px] text-emerald-600 font-mono mt-0.5">
+                  {Math.round((summary.kavlingTerisi / (summary.totalKavling || 1)) * 100)}% dari total
                 </div>
-                <div className="text-[11px] text-blue-800 font-medium">Kontrak</div>
               </div>
-              <div className="bg-amber-50 rounded-lg p-2.5 border border-amber-100">
-                <div className="text-lg font-bold text-amber-700">
+              <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                <div className="text-xl font-bold text-slate-700">
                   {summary.kavlingKosong}
                 </div>
-                <div className="text-[11px] text-amber-800 font-medium">Kosong</div>
+                <div className="text-xs text-slate-800 font-medium mt-0.5">Kosong</div>
+                <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                  {Math.round((summary.kavlingKosong / (summary.totalKavling || 1)) * 100)}% dari total
+                </div>
               </div>
+            </div>
+            <div className="mt-3 text-center text-xs text-slate-600 bg-slate-50 rounded-lg py-1.5 border border-slate-100 font-medium">
+              Total: <strong className="text-slate-900 font-mono">{summary.totalKavling} Kavling Komplek</strong>
             </div>
           </div>
 
@@ -453,13 +593,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Jurnal transaksi pada {periodeLabel}
             </p>
           </div>
-          <button
-            onClick={() => onNavigateToTab('kas')}
-            className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 transition-colors"
-          >
-            <span>Buku Kas Lengkap</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          {isPengurus && (
+            <button
+              onClick={() => onNavigateToTab('kas')}
+              className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 transition-colors"
+            >
+              <span>Buku Kas Lengkap</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="overflow-x-auto">

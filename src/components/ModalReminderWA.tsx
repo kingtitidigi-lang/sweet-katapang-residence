@@ -19,7 +19,7 @@ export const ModalReminderWA: React.FC<ModalReminderWAProps> = ({
   selectedYear,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [bankInfo, setBankInfo] = useState('BCA 8730-2219-01 a.n KAS Bendahara SWEET KATAPANG RESIDENCE');
+  const [bankInfo, setBankInfo] = useState('BCA 8730-2219-01 a.n KAS SWEET KATAPANG RESIDENCE');
 
   if (!isOpen || !warga) return null;
 

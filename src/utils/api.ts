@@ -40,6 +40,40 @@ export async function apiRecordIPL(params: RecordIPLData): Promise<{ transaction
   }
 }
 
+export async function apiValidateIPL(transactionId: string, validatedBy: string): Promise<{ transaction: IPLTransaction; items: IPLPaymentItem[]; kasRecord: KasTransaction } | null> {
+  try {
+    const res = await fetch(`${API_BASE}/ipl/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transactionId, validatedBy }),
+    });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    const data = await res.json();
+    return {
+      transaction: data.transaction,
+      items: data.items,
+      kasRecord: data.kasRecord,
+    };
+  } catch (err) {
+    console.warn('API error on validate IPL:', err);
+    return null;
+  }
+}
+
+export async function apiRejectIPL(transactionId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/ipl/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transactionId }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('API error on reject IPL:', err);
+    return false;
+  }
+}
+
 export async function apiAddKas(params: {
   tipe: TipeTransaksi;
   kategori: KategoriKas;

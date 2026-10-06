@@ -14,12 +14,13 @@ import {
   ExternalLink,
   Lock,
 } from 'lucide-react';
-import { Warga } from '../types';
+import { Warga, AuthUser } from '../types';
 import { formatRupiah, cleanPhoneForWA } from '../utils/formatters';
 
 interface WargaMasterViewProps {
   wargaList: Warga[];
   isLoggedIn?: boolean;
+  currentUser?: AuthUser | null;
   onOpenAddModal: () => void;
   onOpenEditModal: (warga: Warga) => void;
   onDeleteWarga: (id: string) => void;
@@ -29,18 +30,23 @@ interface WargaMasterViewProps {
 export const WargaMasterView: React.FC<WargaMasterViewProps> = ({
   wargaList,
   isLoggedIn = false,
+  currentUser,
   onOpenAddModal,
   onOpenEditModal,
   onDeleteWarga,
   onRequireLogin,
 }) => {
-  if (!isLoggedIn) {
+  const isPengurus = Boolean(
+    isLoggedIn && (!currentUser || currentUser.role !== 'warga')
+  );
+
+  if (!isPengurus) {
     return (
       <div className="bg-white rounded-2xl p-10 text-center border border-slate-200 shadow-sm max-w-md mx-auto my-12">
         <div className="w-14 h-14 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Lock className="w-7 h-7" />
         </div>
-        <h3 className="text-base font-bold text-slate-900 mb-1">Akses Khusus Pengurus RT</h3>
+        <h3 className="text-base font-bold text-slate-900 mb-1">Akses Khusus Pengurus</h3>
         <p className="text-xs text-slate-500 mb-5 leading-relaxed">
           Master data warga dan kavling SWEET KATAPANG RESIDENCE dilindungi dan hanya dapat diakses oleh Pengurus atau Bendahara.
         </p>
@@ -49,7 +55,7 @@ export const WargaMasterView: React.FC<WargaMasterViewProps> = ({
           className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-2 mx-auto"
         >
           <Lock className="w-3.5 h-3.5" />
-          <span>Login Pengurus RT</span>
+          <span>Login Pengurus</span>
         </button>
       </div>
     );
@@ -73,7 +79,10 @@ export const WargaMasterView: React.FC<WargaMasterViewProps> = ({
         w.blok.toLowerCase().includes(searchTerm.toLowerCase()) ||
         w.noHp.includes(searchTerm);
 
-      const matchStatus = statusFilter === 'ALL' || w.statusHunian === statusFilter;
+      const isKosong = w.statusHunian === 'Kosong';
+      const matchStatus =
+        statusFilter === 'ALL' ||
+        (statusFilter === 'Dihuni' ? !isKosong : isKosong);
       const matchBlok =
         blokFilter === 'ALL' || w.blok.toUpperCase().startsWith(blokFilter);
 
@@ -84,18 +93,18 @@ export const WargaMasterView: React.FC<WargaMasterViewProps> = ({
   const handleExportCSV = () => {
     let csv = 'ID,Blok,Nama Warga,Status Hunian,No HP/WhatsApp,Tarif IPL (IDR),Keterangan\n';
     wargaList.forEach((w) => {
-      csv += `"${w.id}","${w.blok}","${w.nama}","${w.statusHunian}","${w.noHp}",${w.tarifIPL},"${(w.keterangan || '').replace(/"/g, '""')}"\n`;
+      const displayStatus = w.statusHunian === 'Tetap' || w.statusHunian === 'Kontrak' ? 'Dihuni' : w.statusHunian;
+      csv += `"${w.id}","${w.blok}","${w.nama}","${displayStatus}","${w.noHp}",${w.tarifIPL},"${(w.keterangan || '').replace(/"/g, '""')}"\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `Master_Data_Warga_RT04.csv`;
+    link.download = `Master_Data_Warga.csv`;
     link.click();
   };
 
-  const countTetap = wargaList.filter((w) => w.statusHunian === 'Tetap').length;
-  const countKontrak = wargaList.filter((w) => w.statusHunian === 'Kontrak').length;
   const countKosong = wargaList.filter((w) => w.statusHunian === 'Kosong').length;
+  const countDihuni = wargaList.length - countKosong;
 
   return (
     <div className="space-y-6">
@@ -111,7 +120,7 @@ export const WargaMasterView: React.FC<WargaMasterViewProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Pengelolaan kepemilikan kavling, status hunian tetap/kontrak/kosong, dan pengaturan tarif IPL.
+            Pengelolaan kepemilikan kavling, status hunian (dihuni / kosong), dan pengaturan tarif IPL.
           </p>
         </div>
 
@@ -124,18 +133,20 @@ export const WargaMasterView: React.FC<WargaMasterViewProps> = ({
             <span>+ Tambah Warga / Kavling</span>
           </button>
 
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg text-xs transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Ekspor CSV</span>
-          </button>
+          {isPengurus && (
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg text-xs transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Ekspor CSV</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Stats Counter */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
             <Home className="w-5 h-5" />
@@ -153,21 +164,9 @@ export const WargaMasterView: React.FC<WargaMasterViewProps> = ({
             <CheckCircle className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[11px] text-slate-500">Warga Tetap</div>
+            <div className="text-[11px] text-slate-500">Kavling Dihuni</div>
             <div className="text-lg font-bold text-emerald-700 font-mono">
-              {countTetap} Unit
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
-            <Users className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-[11px] text-slate-500">Warga Kontrak</div>
-            <div className="text-lg font-bold text-blue-700 font-mono">
-              {countKontrak} Unit
+              {countDihuni} Unit
             </div>
           </div>
         </div>
@@ -226,8 +225,7 @@ export const WargaMasterView: React.FC<WargaMasterViewProps> = ({
             className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500"
           >
             <option value="ALL">Semua Status</option>
-            <option value="Tetap">Tetap</option>
-            <option value="Kontrak">Kontrak</option>
+            <option value="Dihuni">Dihuni</option>
             <option value="Kosong">Kosong</option>
           </select>
         </div>
@@ -263,14 +261,12 @@ export const WargaMasterView: React.FC<WargaMasterViewProps> = ({
                   </td>
                   <td className="py-3 px-4">
                     <span
-                      className={`text-[11px] font-semibold px-2 py-0.5 rounded ${w.statusHunian === 'Tetap'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : w.statusHunian === 'Kontrak'
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      className={`text-[11px] font-semibold px-2 py-0.5 rounded ${w.statusHunian !== 'Kosong'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : 'bg-amber-50 text-amber-700 border border-amber-200'
                         }`}
                     >
-                      {w.statusHunian}
+                      {w.statusHunian === 'Tetap' || w.statusHunian === 'Kontrak' ? 'Dihuni' : w.statusHunian}
                     </span>
                   </td>
                   <td className="py-3 px-4">

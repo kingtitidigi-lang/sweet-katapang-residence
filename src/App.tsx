@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Lock, KeyRound, CheckCircle, AlertCircle, RefreshCw, X } from 'lucide-react';
 import {
   Warga,
   IPLTransaction,
@@ -9,6 +10,7 @@ import {
   MetodePembayaran,
   AppTab,
   RecordIPLData,
+  AuthUser,
 } from './types';
 import {
   loadInitialData,
@@ -18,12 +20,15 @@ import {
 import {
   fetchBackendData,
   apiRecordIPL,
+  apiValidateIPL,
+  apiRejectIPL,
   apiAddKas,
   apiDeleteKas,
   apiSaveWarga,
   apiDeleteWarga,
   apiResetData,
 } from './utils/api';
+import { formatRupiah } from './utils/formatters';
 import {
   calculateRunningBalances,
   computeSummaryKeuangan,
@@ -44,6 +49,19 @@ import { ModalWarga } from './components/ModalWarga';
 import { ModalKwitansi } from './components/ModalKwitansi';
 import { ModalReminderWA } from './components/ModalReminderWA';
 import { ModalLogin } from './components/ModalLogin';
+import { ModalFirebaseConfig } from './components/ModalFirebaseConfig';
+import {
+  isFirebaseConfigured,
+  subscribeToFirebaseData,
+  saveWargaToFirestore,
+  deleteWargaFromFirestore,
+  saveIPLToFirestore,
+  deleteIPLFromFirestore,
+  saveKasToFirestore,
+  deleteKasFromFirestore,
+  ensureFirestoreCollectionsExist,
+  syncLocalDataToFirestore,
+} from './services/firebase';
 
 export default function App() {
   // 1. Core State
@@ -62,8 +80,8 @@ export default function App() {
   const [selectedYear, setSelectedYear] = useState<number>(currentRunningYear);
   const [selectedMonth, setSelectedMonth] = useState<number>(currentRunningMonth);
 
-  // 3. Authentication State (Pengurus vs Guest/Warga)
-  const [currentUser, setCurrentUser] = useState<{ username: string; role: string } | null>(() => {
+  // 3. Authentication State (Superadmin vs Admin vs Guest/Warga)
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
       const stored = localStorage.getItem('sweet_katapang_auth_user');
       return stored ? JSON.parse(stored) : null;
@@ -73,11 +91,43 @@ export default function App() {
   });
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginReason, setLoginReason] = useState<string>('');
+  const [restrictedNotice, setRestrictedNotice] = useState<string | null>(null);
+
+  // Toast Notification State
+  const [toast, setToast] = useState<{
+    id: number;
+    type: 'success' | 'error' | 'info';
+    message: string;
+  } | null>(null);
+
+  const showToast = (type: 'success' | 'error' | 'info', message: string, duration = 5000) => {
+    const id = Date.now();
+    setToast({ id, type, message });
+    setTimeout(() => {
+      setToast((curr) => (curr?.id === id ? null : curr));
+    }, duration);
+  };
 
   const isLoggedIn = currentUser !== null;
+  const isSuperAdmin = currentUser?.role === 'superadmin';
+  const isAdmin = currentUser?.role === 'admin';
 
-  const handleLoginSuccess = (user: { username: string; role: string }) => {
+  const isPengurus = Boolean(isLoggedIn && currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin'));
+
+  // Pastikan tab buku kas, master warga, arsitektur dan template sheets (nocode) hanya bisa diakses oleh pengurus / superadmin
+  useEffect(() => {
+    if ((activeTab === 'kas' || activeTab === 'warga') && !isPengurus) {
+      setActiveTab('dashboard');
+    } else if ((activeTab === 'arsitektur' || activeTab === 'nocode') && !isSuperAdmin) {
+      setActiveTab('dashboard');
+    }
+  }, [activeTab, isPengurus, isSuperAdmin]);
+
+  const handleLoginSuccess = (user: AuthUser) => {
     setCurrentUser(user);
+    if ((activeTab === 'arsitektur' || activeTab === 'nocode') && user.role !== 'superadmin') {
+      setActiveTab('dashboard');
+    }
     try {
       localStorage.setItem('sweet_katapang_auth_user', JSON.stringify(user));
     } catch (e) {
@@ -122,23 +172,104 @@ export default function App() {
   const [reminderWarga, setReminderWarga] = useState<Warga | null>(null);
   const [reminderUnpaidMonths, setReminderUnpaidMonths] = useState<number[]>([]);
 
+  const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
+  const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(() => isFirebaseConfigured());
+
+  // Real-time Firebase Sync listener & Auto Collection Creation
+  useEffect(() => {
+    if (!isFirebaseConnected) return;
+
+    // Otomatis pastikan koleksi ipl_transactions, ipl_items, kas_transactions, warga terbentuk di Firebase
+    if (wargaList.length > 0 || iplTransactions.length > 0 || kasTransactions.length > 0) {
+      ensureFirestoreCollectionsExist({
+        warga: wargaList,
+        iplTransactions,
+        iplItems,
+        kasTransactions,
+      }).then((res) => {
+        if (res.initialized && res.collections.length > 0) {
+          showToast('success', `Koleksi Firebase (${res.collections.join(', ')}) otomatis dibuat & disinkronkan!`);
+        }
+      });
+    }
+
+    const unsubscribe = subscribeToFirebaseData({
+      onWarga: (wargas) => {
+        if (wargas && wargas.length > 0) {
+          setWargaList(wargas);
+        }
+      },
+      onIPLTransactions: (txs) => {
+        if (txs) setIplTransactions(txs);
+      },
+      onIPLItems: (items) => {
+        if (items) setIplItems(items);
+      },
+      onKas: (kas) => {
+        if (kas) setKasTransactions(kas);
+      },
+      onError: (err) => {
+        console.warn('Firebase sync warning:', err);
+      },
+    });
+
+    return () => unsubscribe();
+  }, [isFirebaseConnected]);
+
   // 5. Initial Load (Try Backend API first, fallback to localStorage)
   useEffect(() => {
     async function init() {
-      const backendData = await fetchBackendData();
-      if (backendData && backendData.warga.length > 0) {
-        setWargaList(backendData.warga);
-        setIplTransactions(backendData.iplTransactions);
-        setIplItems(backendData.iplItems);
-        setKasTransactions(backendData.kasTransactions);
-        setIsBackendConnected(true);
-        saveStateToStorage(backendData);
+      let loadedWarga: Warga[] = [];
+      let loadedTxs: IPLTransaction[] = [];
+      let loadedItems: IPLPaymentItem[] = [];
+      let loadedKas: KasTransaction[] = [];
+
+      if (!isFirebaseConfigured()) {
+        const backendData = await fetchBackendData();
+        if (backendData && backendData.warga.length > 0) {
+          loadedWarga = backendData.warga;
+          loadedTxs = backendData.iplTransactions;
+          loadedItems = backendData.iplItems;
+          loadedKas = backendData.kasTransactions;
+          setWargaList(loadedWarga);
+          setIplTransactions(loadedTxs);
+          setIplItems(loadedItems);
+          setKasTransactions(loadedKas);
+          setIsBackendConnected(true);
+          saveStateToStorage(backendData);
+        } else {
+          const localData = loadInitialData();
+          loadedWarga = localData.warga;
+          loadedTxs = localData.iplTransactions;
+          loadedItems = localData.iplItems;
+          loadedKas = localData.kasTransactions;
+          setWargaList(loadedWarga);
+          setIplTransactions(loadedTxs);
+          setIplItems(loadedItems);
+          setKasTransactions(loadedKas);
+        }
       } else {
+        // Firebase aktif: ambil cache lokal sebentar sambil menunggu stream realtime Firestore
         const localData = loadInitialData();
-        setWargaList(localData.warga);
-        setIplTransactions(localData.iplTransactions);
-        setIplItems(localData.iplItems);
-        setKasTransactions(localData.kasTransactions);
+        loadedWarga = localData.warga;
+        loadedTxs = localData.iplTransactions;
+        loadedItems = localData.iplItems;
+        loadedKas = localData.kasTransactions;
+        setWargaList(loadedWarga);
+        setIplTransactions(loadedTxs);
+        setIplItems(loadedItems);
+        setKasTransactions(loadedKas);
+
+        ensureFirestoreCollectionsExist({
+          warga: loadedWarga,
+          iplTransactions: loadedTxs,
+          iplItems: loadedItems,
+          kasTransactions: loadedKas,
+        }).then((res) => {
+          if (res.initialized && res.collections.length > 0) {
+            console.log('Firebase collections auto-created on init:', res.collections);
+          }
+        });
       }
     }
     init();
@@ -179,31 +310,98 @@ export default function App() {
     );
   }, [transactionsWithRunningBalance, wargaList, iplItems, selectedYear, selectedMonth]);
 
+  // 8. Pending validation items for Bendahara review
+  const pendingIPLTransactions = useMemo(() => {
+    return iplTransactions.filter((t) => t.status === 'Menunggu Validasi');
+  }, [iplTransactions]);
+
   // --- Handlers ---
 
   // Handle Recording IPL Payment (Single or Rapel)
   const handleRecordIPL = async (data: RecordIPLData) => {
-    // Call backend API
-    const apiResult = await apiRecordIPL(data);
+    const isPengurus = Boolean(isLoggedIn && currentUser && currentUser.role !== 'warga');
+    const finalData: RecordIPLData = {
+      ...data,
+      status: isPengurus ? 'Lunas' : 'Menunggu Validasi',
+      submittedBy: isPengurus ? 'pengurus' : 'warga',
+      diterimaOleh: isPengurus
+        ? data.diterimaOleh || currentUser?.roleLabel || 'Bendahara'
+        : 'Menunggu Validasi Bendahara',
+    };
 
     let transaction: IPLTransaction;
     let items: IPLPaymentItem[];
-    let kasRecord: KasTransaction;
+    let kasRecord: KasTransaction | null = null;
 
-    if (apiResult) {
-      transaction = apiResult.transaction;
-      items = apiResult.items;
-      kasRecord = apiResult.kasRecord;
-    } else {
-      const localResult = executeRapelPayment(data);
+    if (isFirebaseConfigured()) {
+      // 1. MODE CLOUD AKTIF: Langsung simpan ke Firebase Firestore saja (tanpa db.json)
+      const localResult = executeRapelPayment(finalData);
       transaction = localResult.transaction;
       items = localResult.items;
       kasRecord = localResult.kasRecord;
+
+      if (transaction.status === 'Lunas' && kasRecord) {
+        showToast('info', `Menyimpan pembayaran IPL Kavling ${transaction.blok} ke Cloud Firebase...`, 2000);
+        saveIPLToFirestore(transaction, items, kasRecord).then((res) => {
+          if (res.success) {
+            showToast(
+              'success',
+              `Pembayaran IPL Kavling ${transaction.blok} (${items.length} bulan) LUNAS & langsung tersimpan ke Firebase!`
+            );
+          } else {
+            showToast(
+              'error',
+              `Gagal menyimpan ke Firebase: ${res.error}`
+            );
+          }
+        });
+      } else {
+        showToast('info', `Mengirim konfirmasi IPL Kavling ${transaction.blok} ke Cloud Firebase...`, 2000);
+        saveIPLToFirestore(transaction, items).then((res) => {
+          if (res.success) {
+            showToast(
+              'success',
+              `Konfirmasi IPL Kavling ${transaction.blok} (${items.length} bulan) tersimpan di Firebase! Menunggu validasi.`
+            );
+          } else {
+            showToast(
+              'error',
+              `Gagal mengirim konfirmasi ke Firebase: ${res.error}`
+            );
+          }
+        });
+      }
+    } else {
+      // 2. MODE LOKAL: Fallback simpan ke Backend lokal (db.json)
+      const apiResult = await apiRecordIPL(finalData);
+      if (apiResult) {
+        transaction = apiResult.transaction;
+        items = apiResult.items;
+        kasRecord = apiResult.kasRecord;
+      } else {
+        const localResult = executeRapelPayment(finalData);
+        transaction = localResult.transaction;
+        items = localResult.items;
+        kasRecord = localResult.kasRecord;
+      }
+
+      if (transaction.status === 'Lunas') {
+        showToast('success', `Pembayaran IPL Kavling ${transaction.blok} LUNAS & tercatat di Buku Kas lokal.`);
+      } else {
+        showToast(
+          'info',
+          `Konfirmasi pembayaran IPL Kavling ${transaction.blok} tersimpan di lokal (Menunggu validasi Bendahara).`
+        );
+      }
     }
 
     const newTxList = [transaction, ...iplTransactions];
     const newItemsList = [...items, ...iplItems];
-    const newKasList = [kasRecord, ...kasTransactions];
+    // Masukkan ke Buku Kas HANYA jika status Lunas
+    const newKasList =
+      transaction.status === 'Lunas' && kasRecord
+        ? [kasRecord, ...kasTransactions]
+        : kasTransactions;
 
     persistState(wargaList, newTxList, newItemsList, newKasList);
 
@@ -212,6 +410,141 @@ export default function App() {
       setKwitansiItem(items[0]);
       setKwitansiTx(transaction);
       setIsKwitansiOpen(true);
+    }
+  };
+
+  // Handle Admin / Pengurus Validating Pending IPL Payment
+  const handleValidateIPL = async (txId: string) => {
+    if (!isLoggedIn) {
+      handleRequireLogin('Hanya Admin / Pengurus yang dapat memvalidasi pembayaran IPL.');
+      return;
+    }
+    if (currentUser?.role === 'warga') {
+      handleRequireLogin('Akun Warga tidak memiliki izin untuk memvalidasi pembayaran.');
+      return;
+    }
+
+    const targetTx = iplTransactions.find((t) => t.id === txId);
+    if (!targetTx) return;
+
+    const validatorName =
+      currentUser?.roleLabel ||
+      (currentUser?.role === 'admin' ? 'Admin' : 'Bendahara');
+
+    const updatedTx: IPLTransaction = {
+      ...targetTx,
+      status: 'Lunas',
+      validatedAt: new Date().toISOString(),
+      validatedBy: validatorName,
+      diterimaOleh: validatorName,
+      kasTransactionId: `kas-${targetTx.id}`,
+    };
+
+    const updatedItems: IPLPaymentItem[] = iplItems
+      .filter((item) => item.transactionId === txId)
+      .map((item) => ({ ...item, status: 'Lunas' as const }));
+
+    const newKasRecord: KasTransaction = {
+      id: `kas-${targetTx.id}`,
+      tanggal: targetTx.tanggalBayar || new Date().toISOString().split('T')[0],
+      tipe: 'PEMASUKAN',
+      kategori: 'Iuran IPL',
+      nominal: targetTx.totalNominal,
+      deskripsi: `IPL Blok ${targetTx.blok} - ${targetTx.nama} (${targetTx.bulanList.length} bln: ${targetTx.bulanList.join(', ')})`,
+      metode: targetTx.metode,
+      refId: targetTx.id,
+      penanggungJawab: validatorName,
+    };
+
+    if (isFirebaseConfigured()) {
+      // 1. MODE CLOUD AKTIF: Langsung simpan ke Firebase Firestore saja (tanpa db.json)
+      showToast('info', `Menyimpan validasi pembayaran ke Firebase...`, 2000);
+      saveIPLToFirestore(updatedTx, updatedItems, newKasRecord).then((res) => {
+        if (res.success) {
+          showToast(
+            'success',
+            `Validasi IPL Kavling ${updatedTx.blok} LUNAS & langsung tersimpan ke Firebase!`
+          );
+        } else {
+          showToast('error', `Gagal validasi ke Firebase: ${res.error}`);
+        }
+      });
+    } else {
+      // 2. MODE LOKAL: Fallback simpan ke Backend lokal (db.json)
+      await apiValidateIPL(txId, validatorName);
+      showToast(
+        'success',
+        `Pembayaran IPL Kavling ${updatedTx.blok} berhasil divalidasi LUNAS dan dicatat ke Buku Kas lokal!`
+      );
+    }
+
+    const newTxList = iplTransactions.map((t) => (t.id === txId ? updatedTx : t));
+    const newItemsList: IPLPaymentItem[] = iplItems.map((item) =>
+      item.transactionId === txId ? { ...item, status: 'Lunas' as const } : item
+    );
+    const existingKasIndex = kasTransactions.findIndex((k) => k.refId === txId);
+    const newKasList =
+      existingKasIndex >= 0
+        ? kasTransactions.map((k) => (k.refId === txId ? newKasRecord : k))
+        : [newKasRecord, ...kasTransactions];
+
+    persistState(wargaList, newTxList, newItemsList, newKasList);
+
+    if (kwitansiTx?.id === txId) {
+      setKwitansiTx(updatedTx);
+      const firstItem = updatedItems.find((i) => i.transactionId === txId);
+      if (firstItem) setKwitansiItem(firstItem);
+    }
+  };
+
+  // Handle Rejecting / Deleting Pending IPL Submission
+  const handleRejectIPL = async (txId: string) => {
+    if (!isLoggedIn) {
+      handleRequireLogin('Hanya Admin / Pengurus yang dapat menolak pengajuan pembayaran IPL.');
+      return;
+    }
+    if (currentUser?.role === 'warga') {
+      handleRequireLogin('Akun Warga tidak memiliki izin untuk menolak pembayaran.');
+      return;
+    }
+
+    const targetTx = iplTransactions.find((t) => t.id === txId);
+    if (!targetTx) return;
+
+    if (
+      !window.confirm(
+        `Tolak pengajuan pembayaran IPL Kavling ${targetTx.blok} (${targetTx.nama}) sebesar ${formatRupiah(targetTx.totalNominal)}?`
+      )
+    ) {
+      return;
+    }
+
+    const targetItemIds = iplItems.filter((i) => i.transactionId === txId).map((i) => i.id);
+    const newTxList = iplTransactions.filter((t) => t.id !== txId);
+    const newItemsList = iplItems.filter((i) => i.transactionId !== txId);
+    const newKasList = kasTransactions.filter((k) => k.refId !== txId);
+
+    persistState(wargaList, newTxList, newItemsList, newKasList);
+
+    if (isFirebaseConfigured()) {
+      // 1. MODE CLOUD AKTIF: Hapus di Firebase saja (tanpa apiRejectIPL / db.json)
+      deleteIPLFromFirestore(txId, targetItemIds).then((res) => {
+        if (res.success) {
+          showToast(
+            'success',
+            `Pengajuan IPL Kavling ${targetTx.blok} berhasil ditolak & dihapus dari Firebase.`
+          );
+        } else {
+          showToast('error', `Gagal menghapus pengajuan di Firebase: ${res.error}`);
+        }
+      });
+    } else {
+      // 2. MODE LOKAL: Hapus di db.json
+      await apiRejectIPL(txId);
+    }
+
+    if (isKwitansiOpen && kwitansiTx?.id === txId) {
+      setIsKwitansiOpen(false);
     }
   };
 
@@ -225,17 +558,54 @@ export default function App() {
     metode: 'Transfer Bank' | 'Tunai / Cash';
     penanggungJawab: string;
   }) => {
-    const apiResult = await apiAddKas(data);
-    const newTx: KasTransaction = apiResult || {
-      id: `kas-${Date.now().toString(36)}`,
-      tanggal: data.tanggal,
-      tipe: data.tipe,
-      kategori: data.kategori,
-      nominal: data.nominal,
-      deskripsi: data.deskripsi,
-      metode: data.metode,
-      penanggungJawab: data.penanggungJawab,
-    };
+    let newTx: KasTransaction;
+
+    if (isFirebaseConfigured()) {
+      // 1. MODE CLOUD AKTIF: Langsung simpan ke Firebase Firestore saja (tanpa db.json)
+      newTx = {
+        id: `kas-${Date.now().toString(36)}`,
+        tanggal: data.tanggal,
+        tipe: data.tipe,
+        kategori: data.kategori,
+        nominal: data.nominal,
+        deskripsi: data.deskripsi,
+        metode: data.metode,
+        penanggungJawab: data.penanggungJawab,
+      };
+
+      showToast('info', `Menyimpan ${newTx.kategori} ke Cloud Firebase...`, 2000);
+      saveKasToFirestore(newTx).then((res) => {
+        if (res.success) {
+          showToast(
+            'success',
+            `${newTx.kategori} (${formatRupiah(newTx.nominal)}) berhasil tersimpan langsung ke Firebase!`
+          );
+        } else {
+          showToast(
+            'error',
+            `Gagal menyimpan ke Firebase: ${res.error}`
+          );
+        }
+      });
+    } else {
+      // 2. MODE LOKAL: Fallback simpan ke Backend lokal (db.json)
+      const apiResult = await apiAddKas(data);
+      newTx = apiResult || {
+        id: `kas-${Date.now().toString(36)}`,
+        tanggal: data.tanggal,
+        tipe: data.tipe,
+        kategori: data.kategori,
+        nominal: data.nominal,
+        deskripsi: data.deskripsi,
+        metode: data.metode,
+        penanggungJawab: data.penanggungJawab,
+      };
+
+      showToast(
+        'info',
+        `${newTx.kategori} (${formatRupiah(newTx.nominal)}) tersimpan di lokal (db.json).`
+      );
+    }
 
     const newKasList = [newTx, ...kasTransactions];
     persistState(wargaList, iplTransactions, iplItems, newKasList);
@@ -252,42 +622,71 @@ export default function App() {
       );
       if (!confirmDelete) return;
 
-      await apiDeleteKas(id);
       const newTxList = iplTransactions.filter((t) => t.id !== target.refId);
       const newItemsList = iplItems.filter((i) => i.transactionId !== target.refId);
       const newKasList = kasTransactions.filter((k) => k.id !== id);
       persistState(wargaList, newTxList, newItemsList, newKasList);
+
+      if (isFirebaseConfigured()) {
+        // 1. MODE CLOUD AKTIF: Hapus di Firebase saja (tanpa apiDeleteKas / db.json)
+        const targetItemIds = iplItems
+          .filter((i) => i.transactionId === target.refId)
+          .map((i) => i.id);
+        deleteIPLFromFirestore(target.refId, targetItemIds);
+        deleteKasFromFirestore(id).then((res) => {
+          if (res.success) {
+            showToast('success', 'Transaksi kas berhasil dihapus dari Firebase!');
+          } else {
+            showToast('error', `Gagal menghapus kas di Firebase: ${res.error}`);
+          }
+        });
+      } else {
+        // 2. MODE LOKAL: Hapus di db.json
+        await apiDeleteKas(id);
+        showToast('info', 'Transaksi kas berhasil dihapus dari data lokal.');
+      }
     } else {
       if (window.confirm('Yakin ingin menghapus mutasi kas ini?')) {
-        await apiDeleteKas(id);
         const newKasList = kasTransactions.filter((k) => k.id !== id);
         persistState(wargaList, iplTransactions, iplItems, newKasList);
+
+        if (isFirebaseConfigured()) {
+          // 1. MODE CLOUD AKTIF: Hapus di Firebase saja (tanpa apiDeleteKas / db.json)
+          deleteKasFromFirestore(id).then((res) => {
+            if (res.success) {
+              showToast('success', 'Transaksi kas berhasil dihapus dari Firebase!');
+            } else {
+              showToast('error', `Gagal menghapus kas di Firebase: ${res.error}`);
+            }
+          });
+        } else {
+          // 2. MODE LOKAL: Hapus di db.json
+          await apiDeleteKas(id);
+          showToast('info', 'Transaksi kas berhasil dihapus dari data lokal.');
+        }
       }
     }
   };
 
   // Handle CRUD Warga
   const handleSaveWarga = async (data: Omit<Warga, 'id' | 'createdAt'> & { id?: string }) => {
-    const saved = await apiSaveWarga(data);
+    let savedWargaObj: Warga;
+
     if (data.id) {
       // Edit
-      const updated = wargaList.map((w) =>
-        w.id === data.id
-          ? saved || {
-            ...w,
-            blok: data.blok,
-            nama: data.nama,
-            statusHunian: data.statusHunian,
-            noHp: data.noHp,
-            tarifIPL: data.tarifIPL,
-            keterangan: data.keterangan,
-          }
-          : w
-      );
-      persistState(updated, iplTransactions, iplItems, kasTransactions);
+      savedWargaObj = {
+        id: data.id,
+        blok: data.blok,
+        nama: data.nama,
+        statusHunian: data.statusHunian,
+        noHp: data.noHp,
+        tarifIPL: data.tarifIPL,
+        keterangan: data.keterangan,
+        createdAt: wargaList.find((w) => w.id === data.id)?.createdAt || new Date().toISOString().split('T')[0],
+      };
     } else {
       // Create new
-      const newW: Warga = saved || {
+      savedWargaObj = {
         id: `w-${data.blok.replace(/[^A-Za-z0-9]/g, '')}-${Date.now().toString(36)}`,
         blok: data.blok,
         nama: data.nama,
@@ -297,8 +696,37 @@ export default function App() {
         keterangan: data.keterangan,
         createdAt: new Date().toISOString().split('T')[0],
       };
-      persistState([...wargaList, newW], iplTransactions, iplItems, kasTransactions);
     }
+
+    if (isFirebaseConfigured()) {
+      // 1. MODE CLOUD AKTIF: Langsung simpan ke Firebase Firestore saja (tanpa apiSaveWarga / db.json)
+      saveWargaToFirestore(savedWargaObj).then((res) => {
+        if (res.success) {
+          showToast(
+            'success',
+            `Data warga kavling ${savedWargaObj.blok} (${savedWargaObj.nama}) tersimpan langsung ke Firebase!`
+          );
+        } else {
+          showToast(
+            'error',
+            `Gagal menyimpan ke Firebase: ${res.error}`
+          );
+        }
+      });
+    } else {
+      // 2. MODE LOKAL: Fallback simpan ke Backend lokal (db.json)
+      const saved = await apiSaveWarga(data);
+      if (saved) savedWargaObj = saved;
+      showToast('info', `Data warga ${savedWargaObj.blok} tersimpan di lokal (db.json).`);
+    }
+
+    if (data.id) {
+      const updated = wargaList.map((w) => (w.id === data.id ? savedWargaObj : w));
+      persistState(updated, iplTransactions, iplItems, kasTransactions);
+    } else {
+      persistState([...wargaList, savedWargaObj], iplTransactions, iplItems, kasTransactions);
+    }
+
     // Tetap di tab master warga setelah update / save
     setActiveTab('warga');
   };
@@ -307,9 +735,23 @@ export default function App() {
     const w = wargaList.find((item) => item.id === id);
     if (!w) return;
     if (window.confirm(`Hapus data kavling ${w.blok} (${w.nama}) dari master data?`)) {
-      await apiDeleteWarga(id);
       const updated = wargaList.filter((item) => item.id !== id);
       persistState(updated, iplTransactions, iplItems, kasTransactions);
+
+      if (isFirebaseConfigured()) {
+        // 1. MODE CLOUD AKTIF: Hapus di Firebase saja (tanpa apiDeleteWarga / db.json)
+        deleteWargaFromFirestore(id).then((res) => {
+          if (res.success) {
+            showToast('success', `Data kavling ${w.blok} berhasil dihapus dari Firebase!`);
+          } else {
+            showToast('error', `Gagal menghapus warga di Firebase: ${res.error}`);
+          }
+        });
+      } else {
+        // 2. MODE LOKAL: Hapus di db.json
+        await apiDeleteWarga(id);
+        showToast('info', `Data kavling ${w.blok} dihapus dari lokal.`);
+      }
       setActiveTab('warga');
     }
   };
@@ -317,7 +759,7 @@ export default function App() {
   // Reset to default sample
   const handleResetData = async () => {
     if (!isLoggedIn) {
-      handleRequireLogin('Hanya Pengurus RT yang berwenang mereset data keuangan.');
+      handleRequireLogin('Hanya Pengurus yang berwenang mereset data keuangan.');
       return;
     }
 
@@ -326,19 +768,33 @@ export default function App() {
         'Kembalikan seluruh data ke kondisi default komplek SWEET KATAPANG RESIDENCE?'
       )
     ) {
-      const apiReset = await apiResetData();
-      if (apiReset) {
-        setWargaList(apiReset.warga);
-        setIplTransactions(apiReset.iplTransactions);
-        setIplItems(apiReset.iplItems);
-        setKasTransactions(apiReset.kasTransactions);
-        saveStateToStorage(apiReset);
-      } else {
+      if (isFirebaseConfigured()) {
         const reset = resetToDefaultData();
         setWargaList(reset.warga);
         setIplTransactions(reset.iplTransactions);
         setIplItems(reset.iplItems);
         setKasTransactions(reset.kasTransactions);
+        syncLocalDataToFirestore(reset).then((res) => {
+          if (res.success) {
+            showToast('success', 'Data di Firebase berhasil di-reset ke kondisi default!');
+          }
+        });
+      } else {
+        const apiReset = await apiResetData();
+        if (apiReset) {
+          setWargaList(apiReset.warga);
+          setIplTransactions(apiReset.iplTransactions);
+          setIplItems(apiReset.iplItems);
+          setKasTransactions(apiReset.kasTransactions);
+          saveStateToStorage(apiReset);
+        } else {
+          const reset = resetToDefaultData();
+          setWargaList(reset.warga);
+          setIplTransactions(reset.iplTransactions);
+          setIplItems(reset.iplItems);
+          setKasTransactions(reset.kasTransactions);
+        }
+        showToast('info', 'Data lokal berhasil di-reset.');
       }
     }
   };
@@ -372,6 +828,27 @@ export default function App() {
         realAllTimeBalance={summary.realAllTimeBalance}
         isLoggedIn={isLoggedIn}
         currentUser={currentUser}
+        isFirebaseConnected={isFirebaseConnected}
+        onOpenFirebaseConfig={() => {
+          if (currentUser?.role === 'superadmin') {
+            setIsFirebaseModalOpen(true);
+          } else if (currentUser?.role === 'admin') {
+            setRestrictedNotice(
+              'Akses Dibatasi: Pengaturan Google Cloud Firestore hanya dapat dibuka oleh Super Admin (Administrator IT). Role Anda saat ini adalah Pengurus (Bendahara).'
+            );
+          } else {
+            handleRequireLogin('Silakan login sebagai Super Admin untuk membuka konfigurasi Google Cloud Firestore.');
+          }
+        }}
+        onRestrictedCloudAccess={(role) => {
+          if (role === 'admin') {
+            setRestrictedNotice(
+              'Akses Dibatasi: Pengaturan Google Cloud Firestore hanya dapat dibuka oleh Super Admin (Administrator IT). Role Anda saat ini adalah Pengurus (Bendahara).'
+            );
+          } else {
+            handleRequireLogin('Silakan login sebagai Super Admin untuk membuka konfigurasi Google Cloud Firestore.');
+          }
+        }}
         onOpenLogin={() => handleRequireLogin()}
         onLogout={handleLogout}
         onResetData={handleResetData}
@@ -399,11 +876,9 @@ export default function App() {
             selectedYear={selectedYear}
             selectedMonth={selectedMonth}
             isLoggedIn={isLoggedIn}
+            currentUser={currentUser}
+            pendingIPLTransactions={pendingIPLTransactions}
             onOpenIPLModal={() => {
-              if (!isLoggedIn) {
-                handleRequireLogin('Silakan login sebagai Pengurus untuk mencatat pembayaran iuran IPL.');
-                return;
-              }
               setPreSelectedWargaForIPL(null);
               setPreSelectedMonthForIPL(null);
               setIsIPLModalOpen(true);
@@ -416,8 +891,18 @@ export default function App() {
               setKasModalType(type);
               setIsKasModalOpen(true);
             }}
+            onValidateIPL={handleValidateIPL}
+            onRejectIPL={handleRejectIPL}
+            onViewKwitansiForTx={(tx) => {
+              const item = iplItems.find((i) => i.transactionId === tx.id);
+              if (item) {
+                setKwitansiItem(item);
+                setKwitansiTx(tx);
+                setIsKwitansiOpen(true);
+              }
+            }}
             onNavigateToTab={setActiveTab}
-            onRequireLogin={() => handleRequireLogin('Silakan login sebagai Pengurus untuk mencatat transaksi keuangan.')}
+            onRequireLogin={() => handleRequireLogin('Silakan login sebagai Pengurus / Bendahara untuk mengelola transaksi kas.')}
           />
         )}
 
@@ -430,11 +915,8 @@ export default function App() {
             selectedYear={selectedYear}
             setSelectedYear={setSelectedYear}
             isLoggedIn={isLoggedIn}
+            currentUser={currentUser}
             onOpenIPLModalForWarga={(w, month) => {
-              if (!isLoggedIn) {
-                handleRequireLogin('Silakan login sebagai Pengurus untuk mencatat pembayaran iuran IPL warga.');
-                return;
-              }
               setPreSelectedWargaForIPL(w);
               setPreSelectedMonthForIPL(month || null);
               setIsIPLModalOpen(true);
@@ -450,6 +932,8 @@ export default function App() {
               setIsReminderOpen(true);
             }}
             onRequireLogin={() => handleRequireLogin('Silakan login sebagai Pengurus untuk mencatat pembayaran iuran IPL.')}
+            onValidateIPL={handleValidateIPL}
+            onRejectIPL={handleRejectIPL}
           />
         )}
 
@@ -461,6 +945,7 @@ export default function App() {
             selectedMonth={selectedMonth}
             summary={summary}
             isLoggedIn={isLoggedIn}
+            currentUser={currentUser}
             onOpenKasModal={(type) => {
               if (!isLoggedIn) {
                 handleRequireLogin('Silakan login sebagai Pengurus untuk mencatat transaksi kas.');
@@ -485,6 +970,7 @@ export default function App() {
           <WargaMasterView
             wargaList={wargaList}
             isLoggedIn={isLoggedIn}
+            currentUser={currentUser}
             onOpenAddModal={() => {
               if (!isLoggedIn) {
                 handleRequireLogin('Silakan login sebagai Pengurus untuk menambah warga baru.');
@@ -512,11 +998,11 @@ export default function App() {
           />
         )}
 
-        {/* Tab 5: Arsitektur & Skema DB */}
-        {activeTab === 'arsitektur' && <ArchitectureDocsView />}
+        {/* Tab 5: Arsitektur & Skema DB (Khusus Super Admin) */}
+        {activeTab === 'arsitektur' && isSuperAdmin && <ArchitectureDocsView />}
 
-        {/* Tab 6: Template Google Sheets (Opsi A) */}
-        {activeTab === 'nocode' && <GoogleSheetsOptionView />}
+        {/* Tab 6: Template Google Sheets (Opsi A) (Khusus Super Admin) */}
+        {activeTab === 'nocode' && isSuperAdmin && <GoogleSheetsOptionView />}
       </main>
 
       {/* Footer */}
@@ -574,6 +1060,11 @@ export default function App() {
             ? wargaList.find((w) => w.id === kwitansiItem.wargaId)?.noHp
             : undefined
         }
+        isLoggedIn={isLoggedIn}
+        currentUser={currentUser}
+        userRole={currentUser?.role}
+        onValidate={handleValidateIPL}
+        onReject={handleRejectIPL}
       />
 
       <ModalReminderWA
@@ -583,6 +1074,80 @@ export default function App() {
         unpaidMonths={reminderUnpaidMonths}
         selectedYear={selectedYear}
       />
+
+      <ModalFirebaseConfig
+        isOpen={isFirebaseModalOpen}
+        onClose={() => setIsFirebaseModalOpen(false)}
+        wargaList={wargaList}
+        iplTransactions={iplTransactions}
+        iplItems={iplItems}
+        kasTransactions={kasTransactions}
+        onConfigChanged={() => setIsFirebaseConnected(isFirebaseConfigured())}
+      />
+
+      {/* Modal Notifikasi Pembatasan Hak Akses Super Admin */}
+      {restrictedNotice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mb-3.5 mx-auto">
+              <Lock className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 text-center mb-1">
+              Akses Khusus Super Admin
+            </h3>
+            <p className="text-xs text-slate-600 text-center leading-relaxed mb-5">
+              {restrictedNotice}
+            </p>
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={() => setRestrictedNotice(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors"
+              >
+                Mengerti
+              </button>
+              <button
+                onClick={() => {
+                  setRestrictedNotice(null);
+                  handleRequireLogin('Silakan login sebagai Super Admin untuk membuka konfigurasi Google Cloud Firestore.');
+                }}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>Login Super Admin</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Real-Time Sync Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-5 right-5 z-50 max-w-sm w-full animate-in slide-in-from-bottom-5 duration-200 pointer-events-auto">
+          <div
+            className={`p-4 rounded-2xl shadow-2xl border flex items-start gap-3 backdrop-blur-md ${toast.type === 'success'
+                ? 'bg-slate-900/95 text-emerald-300 border-emerald-500/40 shadow-emerald-950/20'
+                : toast.type === 'error'
+                  ? 'bg-slate-900/95 text-rose-300 border-rose-500/40 shadow-rose-950/20'
+                  : 'bg-slate-900/95 text-slate-200 border-slate-700 shadow-slate-950/30'
+              }`}
+          >
+            <div className="shrink-0 mt-0.5">
+              {toast.type === 'success' && <CheckCircle className="w-5 h-5 text-emerald-400" />}
+              {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-400" />}
+              {toast.type === 'info' && <RefreshCw className="w-5 h-5 text-blue-400 animate-spin" />}
+            </div>
+            <div className="flex-1 text-xs leading-relaxed text-white">
+              <p className="font-semibold">{toast.message}</p>
+            </div>
+            <button
+              onClick={() => setToast(null)}
+              className="text-slate-400 hover:text-white p-0.5 rounded transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

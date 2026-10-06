@@ -8,8 +8,11 @@ import {
   HelpCircle,
   Receipt,
   Sparkles,
+  Clock,
+  ShieldCheck,
+  User,
 } from 'lucide-react';
-import { Warga, IPLPaymentItem, MetodePembayaran, RecordIPLData } from '../types';
+import { Warga, IPLPaymentItem, MetodePembayaran, RecordIPLData, AuthUser } from '../types';
 import { NAMA_BULAN, formatRupiah, getTodayDateStr } from '../utils/formatters';
 
 interface ModalCatatIPLProps {
@@ -20,6 +23,8 @@ interface ModalCatatIPLProps {
   preSelectedWarga?: Warga | null;
   preSelectedMonth?: number | null;
   activeYear: number;
+  isLoggedIn?: boolean;
+  currentUser?: AuthUser | null;
   onSubmit: (data: RecordIPLData) => void;
 }
 
@@ -31,15 +36,33 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
   preSelectedWarga,
   preSelectedMonth,
   activeYear,
+  isLoggedIn = false,
+  currentUser = null,
   onSubmit,
 }) => {
+  const isPengurus = Boolean(isLoggedIn && currentUser && currentUser.role !== 'warga');
+
   const [selectedWargaId, setSelectedWargaId] = useState<string>('');
   const [tahun, setTahun] = useState<number>(activeYear);
   const [selectedMonths, setSelectedMonths] = useState<number[]>([]);
   const [tanggalBayar, setTanggalBayar] = useState<string>(getTodayDateStr());
   const [metode, setMetode] = useState<MetodePembayaran>('Transfer Bank');
-  const [diterimaOleh, setDiterimaOleh] = useState<string>('Bendahara');
+  const [diterimaOleh, setDiterimaOleh] = useState<string>(isPengurus ? (currentUser?.roleLabel || 'Bendahara') : 'Warga (Konfirmasi Mandiri)');
   const [catatan, setCatatan] = useState<string>('');
+
+  // Helper to find unpaid months
+  const isMonthPaid = (wId: string, yr: number, month: number) => {
+    return iplItems.some(
+      (item) => item.wargaId === wId && item.tahun === yr && item.bulan === month
+    );
+  };
+
+  const findFirstUnpaidMonth = (wId: string, yr: number): number | null => {
+    for (let m = 1; m <= 12; m++) {
+      if (!isMonthPaid(wId, yr, m)) return m;
+    }
+    return null;
+  };
 
   // Sync when modal opens
   useEffect(() => {
@@ -58,30 +81,24 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
       if (preSelectedMonth) {
         setSelectedMonths([preSelectedMonth]);
       } else {
-        // default select first unpaid month
+        // Auto select sesuai waktu yang berjalan (current running month)
+        const currentRunningMonth = new Date().getMonth() + 1;
         if (defaultWarga) {
-          const firstUnpaid = findFirstUnpaidMonth(defaultWarga.id, activeYear);
-          setSelectedMonths(firstUnpaid ? [firstUnpaid] : [1]);
+          const isPaid = isMonthPaid(defaultWarga.id, activeYear, currentRunningMonth);
+          if (!isPaid) {
+            setSelectedMonths([currentRunningMonth]);
+          } else {
+            const firstUnpaid = findFirstUnpaidMonth(defaultWarga.id, activeYear);
+            setSelectedMonths(firstUnpaid ? [firstUnpaid] : [currentRunningMonth]);
+          }
+        } else {
+          setSelectedMonths([currentRunningMonth]);
         }
       }
     }
   }, [isOpen, preSelectedWarga, preSelectedMonth, activeYear, wargaList]);
 
   const activeWarga = wargaList.find((w) => w.id === selectedWargaId);
-
-  // Helper to find unpaid months
-  const isMonthPaid = (wId: string, yr: number, month: number) => {
-    return iplItems.some(
-      (item) => item.wargaId === wId && item.tahun === yr && item.bulan === month
-    );
-  };
-
-  const findFirstUnpaidMonth = (wId: string, yr: number): number | null => {
-    for (let m = 1; m <= 12; m++) {
-      if (!isMonthPaid(wId, yr, m)) return m;
-    }
-    return null;
-  };
 
   const toggleMonth = (m: number) => {
     if (!activeWarga) return;
@@ -114,6 +131,7 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!activeWarga) return;
     if (selectedMonths.length === 0) {
       alert('Pilih minimal 1 bulan untuk pembayaran IPL.');
       return;
@@ -125,8 +143,10 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
       bulanList: selectedMonths,
       tanggalBayar,
       metode,
-      catatan,
-      diterimaOleh,
+      catatan: catatan.trim() || undefined,
+      diterimaOleh: isPengurus ? (diterimaOleh.trim() || 'Bendahara') : 'Warga (Konfirmasi Mandiri)',
+      status: isPengurus ? 'Lunas' : 'Menunggu Validasi',
+      submittedBy: isPengurus ? 'pengurus' : 'warga',
     });
     onClose();
   };
@@ -137,13 +157,17 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
         {/* Header */}
         <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-              <Receipt className="w-4 h-4" />
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isPengurus ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+              {isPengurus ? <ShieldCheck className="w-4 h-4" /> : <Receipt className="w-4 h-4" />}
             </div>
             <div>
-              <h3 className="text-sm font-bold">Catat Pembayaran Iuran IPL Warga</h3>
+              <h3 className="text-sm font-bold">
+                {isPengurus ? 'Catat Pembayaran IPL (Bendahara)' : 'Konfirmasi Pembayaran IPL Warga'}
+              </h3>
               <p className="text-[11px] text-slate-400">
-                Mendukung pembayaran bulanan biasa maupun rapel multi-bulan
+                {isPengurus
+                  ? 'Status otomatis Lunas & langsung menambah mutasi kas penerimaan'
+                  : 'Lapor pembayaran mandiri (Akan diverifikasi & divalidasi oleh Bendahara)'}
               </p>
             </div>
           </div>
@@ -157,6 +181,28 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
+          {/* Status Explanation Banner */}
+          {isPengurus ? (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-xs text-emerald-800">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div>
+                <span className="font-bold text-emerald-950">Mode Bendahara:</span> Pembayaran akan{' '}
+                <strong>langsung berstatus Lunas</strong> dan otomatis dicatat ke Buku Kas.
+              </div>
+            </div>
+          ) : (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-800">
+              <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-amber-950">Mode Warga (Konfirmasi Mandiri)</p>
+                <p className="mt-0.5 text-slate-700">
+                  Setelah Anda kirim, data akan tercatat dengan status{' '}
+                  <strong className="text-amber-800">Menunggu Validasi</strong> sampai Bendahara
+                  memeriksa dan menyetujuinya.
+                </p>
+              </div>
+            </div>
+          )}
           {/* Unit / Warga Selector */}
           <div>
             <label className="block font-semibold text-slate-700 mb-1">
@@ -165,17 +211,30 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
             <select
               value={selectedWargaId}
               onChange={(e) => {
-                setSelectedWargaId(e.target.value);
-                const first = findFirstUnpaidMonth(e.target.value, tahun);
-                setSelectedMonths(first ? [first] : []);
+                const newWargaId = e.target.value;
+                setSelectedWargaId(newWargaId);
+                const currentRunningMonth = new Date().getMonth() + 1;
+                const isPaid = isMonthPaid(newWargaId, tahun, currentRunningMonth);
+                if (!isPaid) {
+                  setSelectedMonths([currentRunningMonth]);
+                } else {
+                  const first = findFirstUnpaidMonth(newWargaId, tahun);
+                  setSelectedMonths(first ? [first] : []);
+                }
               }}
               className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-emerald-500"
             >
-              {wargaList.map((w) => (
-                <option key={w.id} value={w.id}>
-                  Blok {w.blok} - {w.nama} ({w.statusHunian}) - {formatRupiah(w.tarifIPL)}
-                </option>
-              ))}
+              {wargaList.map((w) => {
+                const displayStatus =
+                  w.statusHunian === 'Tetap' || w.statusHunian === 'Kontrak' || w.statusHunian === 'Dihuni'
+                    ? 'Dihuni'
+                    : w.statusHunian;
+                return (
+                  <option key={w.id} value={w.id}>
+                    Blok {w.blok} - {w.nama} ({displayStatus}) - {formatRupiah(w.tarifIPL)}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -188,8 +247,20 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
               <select
                 value={tahun}
                 onChange={(e) => {
-                  setTahun(Number(e.target.value));
-                  setSelectedMonths([]);
+                  const newYear = Number(e.target.value);
+                  setTahun(newYear);
+                  if (activeWarga) {
+                    const currentRunningMonth = new Date().getMonth() + 1;
+                    const isPaid = isMonthPaid(activeWarga.id, newYear, currentRunningMonth);
+                    if (!isPaid) {
+                      setSelectedMonths([currentRunningMonth]);
+                    } else {
+                      const first = findFirstUnpaidMonth(activeWarga.id, newYear);
+                      setSelectedMonths(first ? [first] : []);
+                    }
+                  } else {
+                    setSelectedMonths([]);
+                  }
                 }}
                 className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900"
               >
@@ -265,10 +336,10 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
                     disabled={paid}
                     onClick={() => toggleMonth(monthNum)}
                     className={`p-2 rounded-lg text-left transition-all border flex flex-col justify-between ${paid
-                      ? 'bg-slate-200/70 border-slate-300 text-slate-400 cursor-not-allowed'
-                      : isSelected
-                        ? 'bg-emerald-500 border-emerald-600 text-white shadow-xs font-bold'
-                        : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-400'
+                        ? 'bg-slate-200/70 border-slate-300 text-slate-400 cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-emerald-500 border-emerald-600 text-white shadow-xs font-bold'
+                          : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-400'
                       }`}
                   >
                     <div className="flex items-center justify-between">
@@ -306,20 +377,24 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
               >
                 <option value="Transfer Bank">Transfer Bank (BCA / Mandiri / BRI)</option>
                 <option value="Tunai / Cash">Tunai / Cash (Langsung ke Bendahara)</option>
-                <option value="QRIS RT">QRIS Lingkungan RT</option>
+                <option value="QRIS">QRIS</option>
               </select>
             </div>
 
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                Diterima Oleh (Bendahara / PIC):
+                {isPengurus ? 'Diterima Oleh (Bendahara / PIC):' : 'Status Pelaporan:'}
               </label>
               <input
                 type="text"
-                value={diterimaOleh}
-                onChange={(e) => setDiterimaOleh(e.target.value)}
+                value={isPengurus ? diterimaOleh : 'Menunggu Validasi Bendahara'}
+                onChange={(e) => isPengurus && setDiterimaOleh(e.target.value)}
+                readOnly={!isPengurus}
                 required
-                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-900"
+                className={`w-full border rounded-lg px-3 py-2 text-xs font-medium ${isPengurus
+                    ? 'bg-slate-50 border-slate-300 text-slate-900 focus:ring-2 focus:ring-emerald-500'
+                    : 'bg-amber-50/80 border-amber-200 text-amber-800 cursor-not-allowed font-semibold'
+                  }`}
               />
             </div>
           </div>
@@ -327,11 +402,17 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
           {/* Catatan Tambahan */}
           <div>
             <label className="block font-semibold text-slate-700 mb-1">
-              Catatan / Referensi Transfer (Opsional):
+              {isPengurus
+                ? 'Catatan / Referensi Transfer (Opsional):'
+                : 'Bukti / Keterangan Pembayaran (No. Ref / Nama Pengirim):'}
             </label>
             <input
               type="text"
-              placeholder="Contoh: Transfer via m-BCA a.n Bpk. Budi, ref #98234"
+              placeholder={
+                isPengurus
+                  ? 'Contoh: Transfer via m-BCA a.n Bpk. Budi, ref #98234'
+                  : 'Contoh: Transfer BCA an Irwan Syahputra jam 09:30, ref 8721'
+              }
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
               className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-900"
@@ -350,7 +431,7 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
             </div>
             <div className="text-right">
               <div className="text-[10px] text-emerald-800 uppercase font-semibold">
-                Total Setoran Kas:
+                {isPengurus ? 'Total Setoran Kas:' : 'Total Tagihan:'}
               </div>
               <div className="text-lg font-extrabold text-emerald-900 font-mono">
                 {formatRupiah(totalNominal)}
@@ -370,10 +451,22 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
             <button
               type="submit"
               disabled={selectedMonths.length === 0}
-              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-300 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
+              className={`px-5 py-2 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 ${isPengurus
+                  ? 'bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-300'
+                  : 'bg-amber-600 hover:bg-amber-500 disabled:bg-slate-300'
+                }`}
             >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Simpan & Masuk Kas ({formatRupiah(totalNominal)})</span>
+              {isPengurus ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Simpan Pembayaran Lunas ({formatRupiah(totalNominal)})</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-4 h-4" />
+                  <span>Kirim Konfirmasi Bayar ({formatRupiah(totalNominal)})</span>
+                </>
+              )}
             </button>
           </div>
         </form>

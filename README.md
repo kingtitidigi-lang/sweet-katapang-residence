@@ -1,6 +1,6 @@
-# Buku Kas & Iuran IPL Warga RT/RW (Full-Stack)
+# Buku Kas & Iuran IPL Warga (Full-Stack)
 
-Sistem manajemen keuangan lingkungan komplek perumahan, RT, dan RW end-to-end:
+Sistem manajemen keuangan lingkungan komplek perumahan end-to-end:
 - **Master Data Warga & Kavling (CRUD)**: Status hunian (Tetap, Kontrak, Kosong), no HP WhatsApp, tarif IPL.
 - **Matriks Pembayaran IPL Bulanan**: Grid 12 bulan per unit, verifikasi lunas/belum, pembayaran rapel multi-bulan, bukti kwitansi digital, dan pengingat WhatsApp.
 - **Buku Kas Arus Kas (General Ledger)**: Pemasukan & pengeluaran operasional (Satpam, Sampah, Listrik PJU, Maintenance, ATK) dengan saldo berjalan (*running balance*) otomatis.
@@ -58,7 +58,7 @@ npm run dev
 
 Output di terminal akan menampilkan:
 ```
-🚀 [Full-Stack RT Server] Running on http://localhost:3000
+🚀 [Full-Stack Server] Running on http://localhost:3000
 ```
 
 ### 5. Buka di Browser
@@ -75,7 +75,7 @@ Database tersimpan secara lokal dan persisten di file:
 ```
 /data/db.json
 ```
-- File ini otomatis terbuat saat pertama kali server dijalankan dan sudah terisi data awal (26 unit kavling RT 04, transaksi rapel, dan mutasi kas).
+- File ini otomatis terbuat saat pertama kali server dijalankan dan sudah terisi data awal (26 unit kavling warga, transaksi rapel, dan mutasi kas).
 - Setiap kali Anda menambah warga, mencatat pembayaran IPL, atau memasukkan biaya kas, perubahan langsung disimpan ke `data/db.json`.
 - **Cara Backup:** Anda cukup menyalin file `data/db.json` ke flashdisk/Google Drive, atau klik tombol **"Backup"** di bilah atas aplikasi untuk mengunduh snapshot JSON.
 
@@ -83,7 +83,7 @@ Database tersimpan secara lokal dan persisten di file:
 
 ## 📦 Menjalankan Mode Production (Opsional)
 
-Jika ingin menjalankan aplikasi secara permanen atau di VPS / server lokal RT:
+Jika ingin menjalankan aplikasi secara permanen atau di VPS / server lokal:
 ```bash
 # 1. Kompilasi aset frontend
 npm run build
@@ -94,9 +94,6 @@ npm start
 Aplikasi akan melayani file teroptimasi di `http://localhost:3000`.
 
 ---
-
-Username: bendahara (atau admin)
-Password: admin (atau PIN 123456)
 
 ## 📑 Struktur Direktori Proyek
 

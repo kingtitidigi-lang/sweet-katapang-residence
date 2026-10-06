@@ -110,7 +110,7 @@ export function computeSummaryKeuangan(
   const kavlingTerisi = totalKavling - kavlingKosong;
 
   // Target IPL for the active month (or annualized if all months)
-  // Non-empty units pay full tarifIPL; if empty, RT might exempt or charge maintenance
+  // Non-empty units pay full tarifIPL; if empty, management might exempt or charge maintenance
   // Here we calculate target based on active inhabited units
   const targetPerBulan = wargaList
     .filter((w) => w.statusHunian !== 'Kosong')
@@ -118,15 +118,15 @@ export function computeSummaryKeuangan(
 
   const targetPeriode = selectedMonth === 0 ? targetPerBulan * 12 : targetPerBulan;
 
-  // Real collected IPL for the specific period months
+  // Real collected IPL for the specific period months (only verified Lunas items)
   let iplTerkumpul = 0;
   if (selectedMonth === 0) {
     iplTerkumpul = iplItems
-      .filter((item) => item.tahun === selectedYear)
+      .filter((item) => item.tahun === selectedYear && item.status !== 'Menunggu Validasi')
       .reduce((sum, item) => sum + item.nominal, 0);
   } else {
     iplTerkumpul = iplItems
-      .filter((item) => item.tahun === selectedYear && item.bulan === selectedMonth)
+      .filter((item) => item.tahun === selectedYear && item.bulan === selectedMonth && item.status !== 'Menunggu Validasi')
       .reduce((sum, item) => sum + item.nominal, 0);
   }
 
@@ -170,7 +170,9 @@ export function executeRapelPayment(params: RecordIPLData): {
   const wargaId = warga.id || `w-${blok}`;
   const tanggalBayar = params?.tanggalBayar || new Date().toISOString().split('T')[0];
   const metode = params?.metode || 'Transfer Bank';
-  const diterimaOleh = params?.diterimaOleh || 'Bendahara';
+  const status = params?.status || (params?.submittedBy === 'warga' ? 'Menunggu Validasi' : 'Lunas');
+  const submittedBy = params?.submittedBy || (status === 'Menunggu Validasi' ? 'warga' : 'pengurus');
+  const diterimaOleh = params?.diterimaOleh || (status === 'Menunggu Validasi' ? 'Warga (Konfirmasi Mandiri)' : 'Bendahara');
   const catatan = params?.catatan;
 
   const txId = `ipl-${blok}-${tahun}-${Date.now().toString(36)}`;
@@ -188,8 +190,10 @@ export function executeRapelPayment(params: RecordIPLData): {
     keterangan: isRapel
       ? `Bayar rapel ${sortedMonths.length} bulan (${sortedMonths.map((m) => `Bln ${m}`).join(', ')}) ${catatan ? '- ' + catatan : ''}`
       : catatan || `Iuran IPL Bulan ${sortedMonths[0] || 1}/${tahun}`,
-    kasTransactionId: `kas-${txId}`,
+    status,
+    kasTransactionId: status === 'Lunas' ? `kas-${txId}` : undefined,
     diterimaOleh,
+    submittedBy,
   };
 
   const items: IPLPaymentItem[] = sortedMonths.map((bulan) => ({
@@ -204,6 +208,7 @@ export function executeRapelPayment(params: RecordIPLData): {
     tanggalBayar,
     metode,
     isRapel,
+    status,
     catatan: isRapel ? `Rapel ${sortedMonths.length} bulan` : catatan,
     buktiRef: `KWT/${tahun}/${String(bulan).padStart(2, '0')}/${blok}`,
   }));
