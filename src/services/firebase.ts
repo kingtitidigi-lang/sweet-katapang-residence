@@ -44,18 +44,36 @@ export function sanitizeForFirestore<T>(data: T): T {
     return data;
 }
 
-// Default config from env if present
+export const DEFAULT_FIREBASE_CONFIG: FirebaseConfig = {
+    apiKey: "AIzaSyCUttUfWgoPiBHcC5WyNEXFednfoFTHNkc",
+    authDomain: "sweet-katapang.firebaseapp.com",
+    projectId: "sweet-katapang",
+    storageBucket: "sweet-katapang.firebasestorage.app",
+    messagingSenderId: "",
+    appId: "",
+};
+
+const FIREBASE_DISABLED_KEY = 'sweet_katapang_firebase_disabled_v1';
+
+// Default config: auto-connects on all devices using built-in config or env/localStorage
 export function getSavedFirebaseConfig(): FirebaseConfig | null {
     try {
+        if (localStorage.getItem(FIREBASE_DISABLED_KEY) === 'true') {
+            return null;
+        }
+
         const raw = localStorage.getItem(FIREBASE_STORAGE_KEY);
         if (raw) {
-            return JSON.parse(raw);
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.apiKey && parsed.projectId) {
+                return parsed;
+            }
         }
     } catch (e) {
         console.error('Error reading saved firebase config:', e);
     }
 
-    // Check Vite env vars
+    // Check Vite env vars if provided
     const envApiKey = import.meta.env.VITE_FIREBASE_API_KEY;
     const envProjectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
     if (envApiKey && envProjectId) {
@@ -69,17 +87,28 @@ export function getSavedFirebaseConfig(): FirebaseConfig | null {
         };
     }
 
-    return null;
+    // Default configuration built-in so all devices connect automatically!
+    return DEFAULT_FIREBASE_CONFIG;
 }
 
 export function saveFirebaseConfig(config: FirebaseConfig): void {
-    localStorage.setItem(FIREBASE_STORAGE_KEY, JSON.stringify(config));
+    try {
+        localStorage.removeItem(FIREBASE_DISABLED_KEY);
+        localStorage.setItem(FIREBASE_STORAGE_KEY, JSON.stringify(config));
+    } catch (e) {
+        console.warn('Could not save firebase config to localStorage:', e);
+    }
     currentApp = null;
     currentDb = null;
 }
 
 export function clearFirebaseConfig(): void {
-    localStorage.removeItem(FIREBASE_STORAGE_KEY);
+    try {
+        localStorage.removeItem(FIREBASE_STORAGE_KEY);
+        localStorage.setItem(FIREBASE_DISABLED_KEY, 'true');
+    } catch (e) {
+        console.warn('Could not set firebase disabled in localStorage:', e);
+    }
     currentApp = null;
     currentDb = null;
 }
