@@ -89,7 +89,7 @@ export const ModalLogin: React.FC<ModalLoginProps> = ({
 
                 {/* Content */}
                 <div className="p-6">
-                    {reason && (
+                    {/* {reason && (
                         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-800">
                             <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                             <div>
@@ -97,7 +97,7 @@ export const ModalLogin: React.FC<ModalLoginProps> = ({
                                 <p className="mt-0.5">{reason}</p>
                             </div>
                         </div>
-                    )}
+                    )} */}
 
                     {errorMsg && (
                         <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">

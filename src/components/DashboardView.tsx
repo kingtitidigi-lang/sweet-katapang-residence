@@ -108,7 +108,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="text-xs uppercase tracking-wider text-slate-300 font-semibold">
-              {isLoggedIn ? 'Panel Cepat Pengurus' : 'Transparansi Keuangan Warga'}
+              {isLoggedIn ? 'Panel Cepat Pengurus' : 'Keuangan Warga'}
             </span>
           </div>
           <h2 className="text-xl font-extrabold text-white mt-1">
@@ -117,7 +117,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <p className="text-xs text-slate-300 mt-0.5">
             {isLoggedIn
               ? 'Kelola penerimaan IPL, catat operasional satpam & sampah, dan pantau saldo berjalan.'
-              : 'Laporan arus kas dan kolektibilitas IPL transparan untuk seluruh warga komplek.'}
+              : 'Laporan arus kas dan kolektibilitas IPL untuk seluruh warga komplek.'}
           </p>
         </div>
 
@@ -155,10 +155,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>Catat Pembayaran Iuran IPL Warga</span>
+                <span>Konfirmasi Pembayaran IPL</span>
               </button>
 
-              {onRequireLogin && (
+              {/* {onRequireLogin && (
                 <button
                   onClick={onRequireLogin}
                   className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-semibold px-3 py-2 rounded-xl text-xs transition-colors"
@@ -166,7 +166,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <Lock className="w-3.5 h-3.5 text-slate-400" />
                   <span>Login Pengurus / Bendahara</span>
                 </button>
-              )}
+              )} */}
             </div>
           )}
         </div>
@@ -357,8 +357,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
               <span
                 className={`text-xs font-bold px-2 py-0.5 rounded ${summary.surplusDefisitPeriode >= 0
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : 'bg-rose-100 text-rose-800'
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : 'bg-rose-100 text-rose-800'
                   }`}
               >
                 {summary.surplusDefisitPeriode >= 0 ? 'SURPLUS' : 'DEFISIT'}
@@ -412,10 +412,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="w-full bg-slate-100 rounded-full h-2.5 mt-3 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${summary.persentaseKolektibilitas >= 80
-                    ? 'bg-emerald-500'
-                    : summary.persentaseKolektibilitas >= 50
-                      ? 'bg-amber-500'
-                      : 'bg-rose-500'
+                  ? 'bg-emerald-500'
+                  : summary.persentaseKolektibilitas >= 50
+                    ? 'bg-amber-500'
+                    : 'bg-rose-500'
                   }`}
                 style={{ width: `${Math.min(100, summary.persentaseKolektibilitas)}%` }}
               ></div>

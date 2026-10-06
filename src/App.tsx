@@ -993,11 +993,15 @@ export default function App() {
       {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-6 text-xs text-center no-print">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-1">
-          <p className="font-medium text-slate-300">
+          {/* <p className="font-medium text-slate-300">
             Sistem Manajemen Keuangan SWEET KATAPANG RESIDENCE
-          </p>
+          </p> */}
           <p className="text-slate-500 text-[11px]">
-            Dirancang dengan prinsip transparansi akuntansi lingkungan, verifikasi pembayaran rapel, dan ketahanan data.
+            Sistem Manajemen Keuangan SWEET KATAPANG RESIDENCE
+            {/* Dirancang dengan prinsip transparansi akuntansi lingkungan, verifikasi pembayaran, dan ketahanan data. */}
+          </p>
+          <p className="font-medium text-slate-300">
+            2026 Sistem Kas & IPL Komplek.
           </p>
         </div>
       </footer>
@@ -1111,10 +1115,10 @@ export default function App() {
         <div className="fixed bottom-5 right-5 z-50 max-w-sm w-full animate-in slide-in-from-bottom-5 duration-200 pointer-events-auto">
           <div
             className={`p-4 rounded-2xl shadow-2xl border flex items-start gap-3 backdrop-blur-md ${toast.type === 'success'
-                ? 'bg-slate-900/95 text-emerald-300 border-emerald-500/40 shadow-emerald-950/20'
-                : toast.type === 'error'
-                  ? 'bg-slate-900/95 text-rose-300 border-rose-500/40 shadow-rose-950/20'
-                  : 'bg-slate-900/95 text-slate-200 border-slate-700 shadow-slate-950/30'
+              ? 'bg-slate-900/95 text-emerald-300 border-emerald-500/40 shadow-emerald-950/20'
+              : toast.type === 'error'
+                ? 'bg-slate-900/95 text-rose-300 border-rose-500/40 shadow-rose-950/20'
+                : 'bg-slate-900/95 text-slate-200 border-slate-700 shadow-slate-950/30'
               }`}
           >
             <div className="shrink-0 mt-0.5">

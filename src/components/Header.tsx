@@ -79,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
                   </span>
                 ) : (
                   <span className="text-[10px] px-2 py-0.5 font-semibold rounded bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                    Mode Warga (Lihat Saja)
+                    Mode Warga
                   </span>
                 )}
               </div>
@@ -113,11 +113,10 @@ export const Header: React.FC<HeaderProps> = ({
                     ? 'Cloud Firebase Aktif (Klik untuk Pengaturan Cloud Sync)'
                     : 'Hubungkan ke Database Cloud Firebase (Super Admin)'
                 }
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all border cursor-pointer ${
-                  isFirebaseConnected
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all border cursor-pointer ${isFirebaseConnected
                     ? 'bg-emerald-950/70 text-emerald-300 border-emerald-600/60 hover:bg-emerald-900/80 shadow-xs'
                     : 'bg-slate-800 text-amber-300 border-amber-500/40 hover:bg-slate-700'
-                }`}
+                  }`}
               >
                 <div className="relative flex items-center">
                   <Cloud className="w-3.5 h-3.5" />
@@ -136,11 +135,10 @@ export const Header: React.FC<HeaderProps> = ({
                     ? 'Status: Cloud Firebase Aktif & Terhubung'
                     : 'Status: Mode Penyimpanan Lokal (db.json)'
                 }
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border select-none cursor-default pointer-events-none ${
-                  isFirebaseConnected
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border select-none cursor-default pointer-events-none ${isFirebaseConnected
                     ? 'bg-emerald-950/70 text-emerald-300 border-emerald-600/60 shadow-xs'
                     : 'bg-slate-800 text-amber-300 border-amber-500/40'
-                }`}
+                  }`}
               >
                 <div className="relative flex items-center">
                   <Cloud className="w-3.5 h-3.5" />
@@ -206,8 +204,8 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => setActiveTab('dashboard')}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-xs sm:text-sm whitespace-nowrap ${activeTab === 'dashboard'
-                ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
+              : 'text-slate-300 hover:text-white hover:bg-slate-800'
               }`}
           >
             <LayoutDashboard className="w-4 h-4" />
@@ -217,8 +215,8 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => setActiveTab('matriks')}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-xs sm:text-sm whitespace-nowrap ${activeTab === 'matriks'
-                ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
+              : 'text-slate-300 hover:text-white hover:bg-slate-800'
               }`}
           >
             <Grid3X3 className="w-4 h-4" />
@@ -231,8 +229,8 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => setActiveTab('kas')}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-xs sm:text-sm whitespace-nowrap ${activeTab === 'kas'
-                    ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                  ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
                   }`}
               >
                 <BookOpen className="w-4 h-4" />
@@ -242,8 +240,8 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => setActiveTab('warga')}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-xs sm:text-sm whitespace-nowrap ${activeTab === 'warga'
-                    ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                  ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
                   }`}
               >
                 <Users className="w-4 h-4" />
@@ -256,8 +254,8 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => setActiveTab('arsitektur')}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-xs sm:text-sm whitespace-nowrap ${activeTab === 'arsitektur'
-                        ? 'bg-indigo-500 text-white font-bold shadow-md shadow-indigo-500/20'
-                        : 'text-indigo-300 hover:text-white hover:bg-indigo-950/50'
+                      ? 'bg-indigo-500 text-white font-bold shadow-md shadow-indigo-500/20'
+                      : 'text-indigo-300 hover:text-white hover:bg-indigo-950/50'
                       }`}
                   >
                     <Database className="w-4 h-4 text-indigo-200" />
@@ -267,8 +265,8 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => setActiveTab('nocode')}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-xs sm:text-sm whitespace-nowrap ${activeTab === 'nocode'
-                        ? 'bg-amber-400 text-slate-950 font-bold shadow-md shadow-amber-400/20'
-                        : 'text-amber-300 hover:text-white hover:bg-amber-950/40'
+                      ? 'bg-amber-400 text-slate-950 font-bold shadow-md shadow-amber-400/20'
+                      : 'text-amber-300 hover:text-white hover:bg-amber-950/40'
                       }`}
                   >
                     <FileSpreadsheet className="w-4 h-4 text-amber-400" />
