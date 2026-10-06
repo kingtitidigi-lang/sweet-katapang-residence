@@ -31,7 +31,7 @@ export const ModalLogin: React.FC<ModalLoginProps> = ({
         // 1. Akun Super Admin (Administrator IT) -> Punya akses Google Cloud Firestore
         if (
             (u === 'superadmin' && (p === 'superadmin' || p === 'superadmin123')) ||
-            (u === 'ketua' && (p === 'superadmin' || p === 'ketua'))
+            (u === 'supermie' && (p === 'supermie'))
         ) {
             onLoginSuccess({
                 username: u,
@@ -47,7 +47,8 @@ export const ModalLogin: React.FC<ModalLoginProps> = ({
         // 2. Akun Admin (Bendahara / Pengurus) -> Tidak bisa membuka konfigurasi Cloud Firestore
         if (
             (u === 'admin' && (p === 'admin' || p === 'admin123')) ||
-            (u === 'bendahara' && (p === 'bendahara' || p === 'admin'))
+            (u === 'bendahara' && (p === 'bendahara' || p === 'admin')) ||
+            (u === 'nasiliwet' && (p === 'nasiliwet'))
         ) {
             onLoginSuccess({
                 username: u,
@@ -142,48 +143,6 @@ export const ModalLogin: React.FC<ModalLoginProps> = ({
                             <span>Masuk Sekarang</span>
                         </button>
                     </form>
-
-                    {/* Quick preset buttons */}
-                    <div className="mt-5 pt-4 border-t border-slate-100">
-                        <p className="text-[11px] font-semibold text-slate-500 mb-2">Pilih Akun Cepat:</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setUsername('superadmin');
-                                    setPassword('superadmin');
-                                }}
-                                className="p-2.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-900 rounded-xl text-left transition-colors"
-                            >
-                                <div className="flex items-center gap-1.5 font-bold text-xs">
-                                    <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
-                                    <span>Super Admin</span>
-                                </div>
-                                <div className="text-[10px] text-purple-700 mt-0.5">
-                                    <code>superadmin</code> / <code>superadmin</code> <br />
-                                    <span className="font-semibold text-purple-900">Akses Penuh + Tab Arsitektur & Template</span>
-                                </div>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setUsername('admin');
-                                    setPassword('admin');
-                                }}
-                                className="p-2.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 rounded-xl text-left transition-colors"
-                            >
-                                <div className="flex items-center gap-1.5 font-bold text-xs">
-                                    <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-                                    <span>Admin (Bendahara)</span>
-                                </div>
-                                <div className="text-[10px] text-blue-700 mt-0.5">
-                                    <code>admin</code> / <code>admin</code> <br />
-                                    <span className="text-slate-600">Validasi Lunas, Kas & Warga (Tanpa Tab Arsitektur)</span>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
