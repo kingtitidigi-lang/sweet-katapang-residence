@@ -263,8 +263,8 @@ function bukaSheetMatriks() {
                     <button
                         onClick={() => setActiveSheetTab('warga')}
                         className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors flex items-center gap-1.5 ${activeSheetTab === 'warga'
-                                ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
-                                : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
                             }`}
                     >
                         <Table className="w-3.5 h-3.5" />
@@ -274,8 +274,8 @@ function bukaSheetMatriks() {
                     <button
                         onClick={() => setActiveSheetTab('transaksi')}
                         className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors flex items-center gap-1.5 ${activeSheetTab === 'transaksi'
-                                ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
-                                : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
                             }`}
                     >
                         <Table className="w-3.5 h-3.5" />
@@ -285,8 +285,8 @@ function bukaSheetMatriks() {
                     <button
                         onClick={() => setActiveSheetTab('kas')}
                         className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors flex items-center gap-1.5 ${activeSheetTab === 'kas'
-                                ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
-                                : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-white text-emerald-700 border-t-2 border-emerald-600 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
                             }`}
                     >
                         <Table className="w-3.5 h-3.5" />
@@ -296,8 +296,8 @@ function bukaSheetMatriks() {
                     <button
                         onClick={() => setActiveSheetTab('script')}
                         className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors flex items-center gap-1.5 ${activeSheetTab === 'script'
-                                ? 'bg-white text-indigo-700 border-t-2 border-indigo-600 shadow-xs'
-                                : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-white text-indigo-700 border-t-2 border-indigo-600 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
                             }`}
                     >
                         <Code2 className="w-3.5 h-3.5 text-indigo-600" />

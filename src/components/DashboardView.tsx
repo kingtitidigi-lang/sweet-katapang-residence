@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -18,6 +18,8 @@ import {
   Home,
   Check,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Clock,
   Lock,
 } from 'lucide-react';
@@ -64,6 +66,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       ? currentUser.role === 'admin' || currentUser.role === 'superadmin'
       : isLoggedIn
   );
+  const [isQueueExpanded, setIsQueueExpanded] = useState(true);
   const periodeLabel =
     selectedMonth === 0
       ? `Tahun ${selectedYear}`
@@ -172,111 +175,129 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Pending Validation Alert Card for Bendahara & Warga */}
+      {/* Pending Validation Alert Card for Bendahara & Warga (Compact & Space Saving) */}
       {pendingIPLTransactions && pendingIPLTransactions.length > 0 && (
-        <div className="bg-amber-50/90 border-2 border-amber-300/80 rounded-2xl p-5 shadow-sm space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
-                <Clock className="w-4 h-4 animate-pulse" />
+        <div className="bg-amber-50/80 border border-amber-300 rounded-xl p-3 shadow-xs space-y-2.5">
+          {/* Header Bar: Compact & Collapsible */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
+                <Clock className="w-3.5 h-3.5 animate-pulse" />
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-amber-950">
+              <div className="truncate">
+                <span className="text-xs font-bold text-amber-950">
                   {isLoggedIn
-                    ? `Perhatian Bendahara: Ada ${pendingIPLTransactions.length} Pembayaran IPL Menunggu Validasi`
-                    : `Antrean Konfirmasi Pembayaran IPL (${pendingIPLTransactions.length} Menunggu Validasi Bendahara)`}
-                </h3>
-                <p className="text-xs text-amber-800">
+                    ? `Ada ${pendingIPLTransactions.length} Pembayaran IPL Menunggu Validasi`
+                    : `Antrean Konfirmasi IPL (${pendingIPLTransactions.length} Menunggu Validasi)`}
+                </span>
+                <span className="hidden sm:inline text-[11px] text-amber-800 ml-2">
                   {isLoggedIn
-                    ? 'Warga telah mengisi konfirmasi bayar. Silakan periksa mutasi rekening, lalu klik "Validasi Lunas" agar masuk ke Buku Kas.'
-                    : 'Data pembayaran mandiri warga yang telah dilaporkan dan sedang menunggu verifikasi oleh Bendahara.'}
-                </p>
+                    ? 'Periksa mutasi lalu validasi menjadi Lunas'
+                    : 'Menunggu verifikasi Bendahara'}
+                </span>
               </div>
             </div>
-            <span className="text-xs font-mono font-bold px-2.5 py-1 bg-amber-200/80 text-amber-900 rounded-lg self-start sm:self-auto">
-              {pendingIPLTransactions.length} Pengajuan
-            </span>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[11px] font-mono font-bold px-2 py-0.5 bg-amber-200/80 text-amber-900 rounded-md">
+                {pendingIPLTransactions.length} Warga
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsQueueExpanded(!isQueueExpanded)}
+                className="text-[11px] font-semibold text-amber-900 hover:text-amber-950 bg-amber-200/60 hover:bg-amber-200 px-2 py-0.5 rounded-md transition-colors flex items-center gap-1"
+                title={isQueueExpanded ? 'Tutup daftar' : 'Buka daftar'}
+              >
+                <span>{isQueueExpanded ? 'Tutup' : 'Buka'}</span>
+                {isQueueExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-            {pendingIPLTransactions.map((tx) => (
-              <div
-                key={tx.id}
-                className="bg-white rounded-xl p-4 border border-amber-200 shadow-xs flex flex-col justify-between gap-3 hover:border-amber-300 transition-colors"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-xs bg-slate-900 text-white px-2 py-0.5 rounded">
+          {/* Compact List of Transactions */}
+          {isQueueExpanded && (
+            <div className="max-h-60 overflow-y-auto divide-y divide-amber-200/60 rounded-lg border border-amber-200/80 bg-white shadow-2xs">
+              {pendingIPLTransactions.map((tx) => (
+                <div
+                  key={tx.id}
+                  className="p-2 sm:px-3 sm:py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-amber-50/40 transition-colors"
+                >
+                  {/* Left: Info Warga, Periode & Tanggal */}
+                  <div className="min-w-0 space-y-0.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono font-bold text-[11px] bg-slate-900 text-white px-1.5 py-0.5 rounded">
                         Blok {tx.blok}
                       </span>
-                      <span className="font-bold text-xs text-slate-900">
+                      <span className="font-bold text-xs text-slate-900 truncate">
                         {tx.nama}
                       </span>
-                    </div>
-                    <span className="text-xs font-mono font-extrabold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                      {formatRupiah(tx.totalNominal)}
-                    </span>
-                  </div>
-
-                  <div className="mt-2.5 text-xs text-slate-600 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Bulan:</span>
-                      <span className="font-semibold text-slate-800">
-                        {tx.bulanList.map((m) => NAMA_BULAN[m - 1]).join(', ')} ({tx.tahun})
+                      <span className="text-[11px] text-slate-500 font-medium">
+                        • {tx.bulanList.map((m) => NAMA_BULAN[m - 1]).join(', ')} ({tx.tahun})
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Metode & Tanggal:</span>
-                      <span>{tx.metode} · {formatTanggalIndo(tx.tanggalBayar)}</span>
+                    <div className="flex items-center gap-2 text-[11px] text-slate-500 flex-wrap">
+                      <span>{tx.metode}</span>
+                      <span>·</span>
+                      <span>{formatTanggalIndo(tx.tanggalBayar)}</span>
+                      {tx.keterangan && (
+                        <>
+                          <span>·</span>
+                          <span className="italic text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded truncate max-w-xs">
+                            "{tx.keterangan}"
+                          </span>
+                        </>
+                      )}
                     </div>
-                    {tx.keterangan && (
-                      <div className="text-[11px] text-slate-500 italic bg-slate-50 p-1.5 rounded mt-1 border border-slate-100">
-                        "{tx.keterangan}"
-                      </div>
+                  </div>
+
+                  {/* Right: Total Nominal & Action Buttons */}
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                    <span className="text-xs font-mono font-bold text-amber-950 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                      {formatRupiah(tx.totalNominal)}
+                    </span>
+
+                    {onViewKwitansiForTx && (
+                      <button
+                        onClick={() => onViewKwitansiForTx(tx)}
+                        className="px-2 py-1 text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded transition-colors"
+                        title="Lihat Kwitansi"
+                      >
+                        Kwitansi
+                      </button>
+                    )}
+
+                    {isLoggedIn ? (
+                      <>
+                        {onRejectIPL && (
+                          <button
+                            onClick={() => onRejectIPL(tx.id)}
+                            className="px-2 py-1 text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded transition-colors"
+                            title="Tolak Pengajuan"
+                          >
+                            Tolak
+                          </button>
+                        )}
+                        {onValidateIPL && (
+                          <button
+                            onClick={() => onValidateIPL(tx.id)}
+                            className="px-2.5 py-1 text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 rounded transition-all flex items-center gap-1 shadow-2xs"
+                            title="Validasi Lunas & Masuk Kas"
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Validasi</span>
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-[11px] text-amber-700 font-medium italic">
+                        Menunggu Bendahara
+                      </span>
                     )}
                   </div>
                 </div>
-
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                  {onViewKwitansiForTx && (
-                    <button
-                      onClick={() => onViewKwitansiForTx(tx)}
-                      className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-                    >
-                      Lihat Kwitansi
-                    </button>
-                  )}
-                  {isLoggedIn ? (
-                    <>
-                      {onRejectIPL && (
-                        <button
-                          onClick={() => onRejectIPL(tx.id)}
-                          className="px-2.5 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors"
-                        >
-                          Tolak
-                        </button>
-                      )}
-                      {onValidateIPL && (
-                        <button
-                          onClick={() => onValidateIPL(tx.id)}
-                          className="px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 shadow-xs rounded-lg transition-all flex items-center gap-1.5"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Validasi Lunas</span>
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-[11px] text-amber-700 font-medium italic flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-amber-600" />
-                      <span>Menunggu verifikasi Bendahara</span>
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

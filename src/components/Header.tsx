@@ -114,8 +114,8 @@ export const Header: React.FC<HeaderProps> = ({
                     : 'Hubungkan ke Database Cloud Firebase (Super Admin)'
                 }
                 className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all border cursor-pointer ${isFirebaseConnected
-                    ? 'bg-emerald-950/70 text-emerald-300 border-emerald-600/60 hover:bg-emerald-900/80 shadow-xs'
-                    : 'bg-slate-800 text-amber-300 border-amber-500/40 hover:bg-slate-700'
+                  ? 'bg-emerald-950/70 text-emerald-300 border-emerald-600/60 hover:bg-emerald-900/80 shadow-xs'
+                  : 'bg-slate-800 text-amber-300 border-amber-500/40 hover:bg-slate-700'
                   }`}
               >
                 <div className="relative flex items-center">
@@ -136,8 +136,8 @@ export const Header: React.FC<HeaderProps> = ({
                     : 'Status: Mode Penyimpanan Lokal (db.json)'
                 }
                 className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border select-none cursor-default pointer-events-none ${isFirebaseConnected
-                    ? 'bg-emerald-950/70 text-emerald-300 border-emerald-600/60 shadow-xs'
-                    : 'bg-slate-800 text-amber-300 border-amber-500/40'
+                  ? 'bg-emerald-950/70 text-emerald-300 border-emerald-600/60 shadow-xs'
+                  : 'bg-slate-800 text-amber-300 border-amber-500/40'
                   }`}
               >
                 <div className="relative flex items-center">
@@ -175,7 +175,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
 
             {/* Backup & Reset Controls (Khusus Pengurus / Admin) */}
-            {isPengurus && (
+            {/* {isPengurus && (
               <div className="flex items-center gap-1 pl-1 border-l border-slate-800">
                 <button
                   onClick={onExportBackup}
@@ -195,7 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="hidden sm:inline">Reset</span>
                 </button>
               </div>
-            )}
+            )} */}
           </div>
         </div>
 

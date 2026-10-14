@@ -36,7 +36,7 @@ interface IPLMatrixViewProps {
   setSelectedYear: (year: number) => void;
   isLoggedIn?: boolean;
   currentUser?: AuthUser | null;
-  onOpenIPLModalForWarga: (warga: Warga, defaultMonth?: number) => void;
+  onOpenIPLModalForWarga: (warga?: Warga | null, defaultMonth?: number) => void;
   onViewKwitansi: (item: IPLPaymentItem, tx?: IPLTransaction) => void;
   onOpenReminderWA: (warga: Warga, unpaidMonths: number[]) => void;
   onRequireLogin?: () => void;
@@ -223,7 +223,7 @@ export const IPLMatrixView: React.FC<IPLMatrixViewProps> = ({
           )}
 
           <button
-            onClick={() => onOpenIPLModalForWarga(filteredWarga[0] || wargaList[0])}
+            onClick={() => onOpenIPLModalForWarga(null)}
             className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs shadow-xs transition-all"
           >
             <PlusCircle className="w-3.5 h-3.5" />

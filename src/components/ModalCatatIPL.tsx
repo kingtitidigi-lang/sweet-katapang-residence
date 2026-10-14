@@ -13,7 +13,7 @@ import {
   User,
 } from 'lucide-react';
 import { Warga, IPLPaymentItem, MetodePembayaran, RecordIPLData, AuthUser } from '../types';
-import { NAMA_BULAN, formatRupiah, getTodayDateStr } from '../utils/formatters';
+import { NAMA_BULAN, formatRupiah, getTodayDateStr, formatTanggalIndo } from '../utils/formatters';
 
 interface ModalCatatIPLProps {
   isOpen: boolean;
@@ -49,6 +49,7 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
   const [metode, setMetode] = useState<MetodePembayaran>('Transfer Bank');
   const [diterimaOleh, setDiterimaOleh] = useState<string>(isPengurus ? (currentUser?.roleLabel || 'Bendahara') : 'Warga (Konfirmasi Mandiri)');
   const [catatan, setCatatan] = useState<string>('');
+  const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
 
   // Helper to find unpaid months
   const isMonthPaid = (wId: string, yr: number, month: number) => {
@@ -67,33 +68,29 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
   // Sync when modal opens
   useEffect(() => {
     if (isOpen) {
+      setShowConfirmModal(false);
       setTanggalBayar(getTodayDateStr());
-      const defaultWarga =
-        preSelectedWarga ||
-        wargaList.find((w) => w.statusHunian !== 'Kosong') ||
-        wargaList[0];
-
-      if (defaultWarga) {
-        setSelectedWargaId(defaultWarga.id);
-      }
       setTahun(activeYear);
+      setCatatan('');
 
-      if (preSelectedMonth) {
-        setSelectedMonths([preSelectedMonth]);
-      } else {
-        // Auto select sesuai waktu yang berjalan (current running month)
-        const currentRunningMonth = new Date().getMonth() + 1;
-        if (defaultWarga) {
-          const isPaid = isMonthPaid(defaultWarga.id, activeYear, currentRunningMonth);
+      if (preSelectedWarga) {
+        setSelectedWargaId(preSelectedWarga.id);
+        if (preSelectedMonth) {
+          setSelectedMonths([preSelectedMonth]);
+        } else {
+          const currentRunningMonth = new Date().getMonth() + 1;
+          const isPaid = isMonthPaid(preSelectedWarga.id, activeYear, currentRunningMonth);
           if (!isPaid) {
             setSelectedMonths([currentRunningMonth]);
           } else {
-            const firstUnpaid = findFirstUnpaidMonth(defaultWarga.id, activeYear);
+            const firstUnpaid = findFirstUnpaidMonth(preSelectedWarga.id, activeYear);
             setSelectedMonths(firstUnpaid ? [firstUnpaid] : [currentRunningMonth]);
           }
-        } else {
-          setSelectedMonths([currentRunningMonth]);
         }
+      } else {
+        // Kosongkan pilihan warga saat buka modal baru
+        setSelectedWargaId('');
+        setSelectedMonths([]);
       }
     }
   }, [isOpen, preSelectedWarga, preSelectedMonth, activeYear, wargaList]);
@@ -123,19 +120,27 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
     setSelectedMonths(unpaid);
   };
 
-  if (!isOpen || !activeWarga) return null;
+  if (!isOpen) return null;
 
-  const tarif = activeWarga.tarifIPL || 210000;
-  const totalNominal = selectedMonths.length * tarif;
+  const tarif = activeWarga?.tarifIPL || 210000;
+  const totalNominal = activeWarga ? selectedMonths.length * tarif : 0;
   const isRapel = selectedMonths.length > 1;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleOpenConfirm = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeWarga) return;
+    if (!activeWarga) {
+      alert('Silakan pilih Kavling / Warga terlebih dahulu.');
+      return;
+    }
     if (selectedMonths.length === 0) {
       alert('Pilih minimal 1 bulan untuk pembayaran IPL.');
       return;
     }
+    setShowConfirmModal(true);
+  };
+
+  const handleFinalSubmit = () => {
+    if (!activeWarga) return;
 
     onSubmit({
       warga: activeWarga,
@@ -148,6 +153,7 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
       status: isPengurus ? 'Lunas' : 'Menunggu Validasi',
       submittedBy: isPengurus ? 'pengurus' : 'warga',
     });
+    setShowConfirmModal(false);
     onClose();
   };
 
@@ -180,7 +186,7 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
+        <form onSubmit={handleOpenConfirm} className="p-5 space-y-4 text-xs">
           {/* Status Explanation Banner */}
           {isPengurus ? (
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-xs text-emerald-800">
@@ -213,17 +219,22 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
               onChange={(e) => {
                 const newWargaId = e.target.value;
                 setSelectedWargaId(newWargaId);
+                if (!newWargaId) {
+                  setSelectedMonths([]);
+                  return;
+                }
                 const currentRunningMonth = new Date().getMonth() + 1;
                 const isPaid = isMonthPaid(newWargaId, tahun, currentRunningMonth);
                 if (!isPaid) {
                   setSelectedMonths([currentRunningMonth]);
                 } else {
                   const first = findFirstUnpaidMonth(newWargaId, tahun);
-                  setSelectedMonths(first ? [first] : []);
+                  setSelectedMonths(first ? [first] : [currentRunningMonth]);
                 }
               }}
               className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-emerald-500"
             >
+              <option value="">-- Pilih Kavling / Warga --</option>
               {wargaList.map((w) => {
                 const displayStatus =
                   w.statusHunian === 'Tetap' || w.statusHunian === 'Kontrak' || w.statusHunian === 'Dihuni'
@@ -256,7 +267,7 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
                       setSelectedMonths([currentRunningMonth]);
                     } else {
                       const first = findFirstUnpaidMonth(activeWarga.id, newYear);
-                      setSelectedMonths(first ? [first] : []);
+                      setSelectedMonths(first ? [first] : [currentRunningMonth]);
                     }
                   } else {
                     setSelectedMonths([]);
@@ -294,29 +305,33 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
                 <span className="text-[10px] text-slate-400">Pilih Cepat:</span>
                 <button
                   type="button"
+                  disabled={!activeWarga}
                   onClick={() => handleSelectQuickRapel(1)}
-                  className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[10px] font-medium"
+                  className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed rounded text-[10px] font-medium"
                 >
                   1 Bln
                 </button>
                 <button
                   type="button"
+                  disabled={!activeWarga}
                   onClick={() => handleSelectQuickRapel(3)}
-                  className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[10px] font-medium"
+                  className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed rounded text-[10px] font-medium"
                 >
                   3 Bln
                 </button>
                 <button
                   type="button"
+                  disabled={!activeWarga}
                   onClick={() => handleSelectQuickRapel(6)}
-                  className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[10px] font-medium"
+                  className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed rounded text-[10px] font-medium"
                 >
                   6 Bln
                 </button>
                 <button
                   type="button"
+                  disabled={!activeWarga}
                   onClick={() => handleSelectQuickRapel(12)}
-                  className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[10px] font-medium"
+                  className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed rounded text-[10px] font-medium"
                 >
                   1 Thn
                 </button>
@@ -326,21 +341,25 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
               {NAMA_BULAN.map((bulanNama, idx) => {
                 const monthNum = idx + 1;
-                const paid = isMonthPaid(activeWarga.id, tahun, monthNum);
+                const paid = activeWarga ? isMonthPaid(activeWarga.id, tahun, monthNum) : false;
                 const isSelected = selectedMonths.includes(monthNum);
+                const isDisabled = !activeWarga || paid;
 
                 return (
                   <button
                     key={monthNum}
                     type="button"
-                    disabled={paid}
+                    disabled={isDisabled}
                     onClick={() => toggleMonth(monthNum)}
-                    className={`p-2 rounded-lg text-left transition-all border flex flex-col justify-between ${paid
+                    className={`p-2 rounded-lg text-left transition-all border flex flex-col justify-between ${
+                      paid
                         ? 'bg-slate-200/70 border-slate-300 text-slate-400 cursor-not-allowed'
+                        : !activeWarga
+                        ? 'bg-slate-100/70 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
                         : isSelected
-                          ? 'bg-emerald-500 border-emerald-600 text-white shadow-xs font-bold'
-                          : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-400'
-                      }`}
+                        ? 'bg-emerald-500 border-emerald-600 text-white shadow-xs font-bold'
+                        : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-400'
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] uppercase font-mono">
@@ -348,7 +367,7 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
                       </span>
                       {paid ? (
                         <CheckCircle2 className="w-3 h-3 text-slate-400" />
-                      ) : isSelected ? (
+                      ) : isSelected && activeWarga ? (
                         <CheckCircle2 className="w-3 h-3 text-white" />
                       ) : null}
                     </div>
@@ -356,7 +375,7 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
                       {bulanNama}
                     </div>
                     <div className="text-[9px] mt-0.5 opacity-80">
-                      {paid ? 'Sudah Lunas' : formatRupiah(tarif)}
+                      {paid ? 'Sudah Lunas' : activeWarga ? formatRupiah(tarif) : '-'}
                     </div>
                   </button>
                 );
@@ -426,7 +445,15 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
                 Rincian Pembayaran {isRapel ? '(Rapel Multi-Bulan)' : '(1 Bulan)'}:
               </div>
               <div className="text-xs text-emerald-700 mt-0.5">
-                {selectedMonths.length} Bulan x {formatRupiah(tarif)} (Kavling Blok {activeWarga.blok})
+                {activeWarga ? (
+                  <>
+                    {selectedMonths.length} Bulan x {formatRupiah(tarif)} (Kavling Blok {activeWarga.blok} - {activeWarga.nama})
+                  </>
+                ) : (
+                  <span className="text-amber-800 font-medium italic">
+                    Silakan pilih kavling / warga terlebih dahulu
+                  </span>
+                )}
               </div>
             </div>
             <div className="text-right">
@@ -434,7 +461,7 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
                 {isPengurus ? 'Total Setoran Kas:' : 'Total Tagihan:'}
               </div>
               <div className="text-lg font-extrabold text-emerald-900 font-mono">
-                {formatRupiah(totalNominal)}
+                {activeWarga ? formatRupiah(totalNominal) : '-'}
               </div>
             </div>
           </div>
@@ -450,13 +477,26 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
             </button>
             <button
               type="submit"
-              disabled={selectedMonths.length === 0}
-              className={`px-5 py-2 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 ${isPengurus
-                  ? 'bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-300'
-                  : 'bg-amber-600 hover:bg-amber-500 disabled:bg-slate-300'
-                }`}
+              disabled={!activeWarga || selectedMonths.length === 0}
+              className={`px-5 py-2 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 ${
+                !activeWarga || selectedMonths.length === 0
+                  ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
+                  : isPengurus
+                  ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
+                  : 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/20'
+              }`}
             >
-              {isPengurus ? (
+              {!activeWarga ? (
+                <>
+                  <AlertCircle className="w-4 h-4" />
+                  <span>Pilih Kavling / Warga Terlebih Dahulu</span>
+                </>
+              ) : selectedMonths.length === 0 ? (
+                <>
+                  <AlertCircle className="w-4 h-4" />
+                  <span>Pilih Minimal 1 Bulan</span>
+                </>
+              ) : isPengurus ? (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Simpan Pembayaran Lunas ({formatRupiah(totalNominal)})</span>
@@ -471,6 +511,109 @@ export const ModalCatatIPL: React.FC<ModalCatatIPLProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Custom Confirmation Modal Dialog */}
+      {showConfirmModal && activeWarga && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 overflow-hidden transform scale-100 transition-all">
+            {/* Confirmation Header */}
+            <div className="bg-slate-900 text-white p-4 border-b border-slate-800 flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                isPengurus ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+              }`}>
+                {isPengurus ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
+              </div>
+              <div>
+                <h4 className="text-sm font-bold">
+                  {isPengurus ? 'Konfirmasi Simpan Pembayaran IPL' : 'Konfirmasi Pelaporan Mandiri IPL'}
+                </h4>
+                <p className="text-[11px] text-slate-300">
+                  {isPengurus
+                    ? 'Apakah Anda yakin ingin memproses dan mencatat pembayaran ini?'
+                    : 'Pastikan data transfer / pembayaran sudah sesuai sebelum dikirim.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Confirmation Body Summary */}
+            <div className="p-4 space-y-3 text-xs bg-slate-50/60">
+              <div className="bg-white rounded-xl p-3 border border-slate-200/90 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">Kavling / Warga:</span>
+                  <span className="font-bold text-slate-900">
+                    Blok {activeWarga.blok} - {activeWarga.nama}
+                  </span>
+                </div>
+                <div className="flex items-start justify-between py-1 border-b border-slate-100 gap-2">
+                  <span className="text-slate-500 shrink-0">Periode Bulan:</span>
+                  <span className="font-semibold text-slate-800 text-right">
+                    {selectedMonths.map((m) => NAMA_BULAN[m - 1]).join(', ')} {tahun} ({selectedMonths.length} Bln)
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">Metode Pembayaran:</span>
+                  <span className="font-semibold text-slate-800">{metode}</span>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">Tanggal Bayar:</span>
+                  <span className="font-semibold text-slate-800">{formatTanggalIndo(tanggalBayar)}</span>
+                </div>
+                {catatan && (
+                  <div className="py-1 border-b border-slate-100">
+                    <span className="text-slate-500 block mb-0.5">Catatan / Referensi:</span>
+                    <span className="text-slate-700 italic bg-slate-50 p-1.5 rounded block border border-slate-200 text-[11px]">
+                      "{catatan}"
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">Status Pencatatan:</span>
+                  <span className={`font-bold px-2 py-0.5 rounded text-[11px] ${
+                    isPengurus ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {isPengurus ? 'Lunas (Masuk Buku Kas)' : 'Menunggu Validasi Bendahara'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="font-bold text-slate-700">Total Nominal:</span>
+                  <span className="font-mono font-extrabold text-base text-emerald-700">
+                    {formatRupiah(totalNominal)}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-slate-500 italic text-center">
+                {isPengurus
+                  ? 'Klik "Ya, Simpan Pembayaran" untuk mencatat ke kas dan mencetak kwitansi.'
+                  : 'Klik "Ya, Kirim Konfirmasi" untuk meneruskan data ke Bendahara.'}
+              </p>
+            </div>
+
+            {/* Confirmation Footer Buttons */}
+            <div className="p-3 bg-white border-t border-slate-200 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Periksa Kembali
+              </button>
+              <button
+                type="button"
+                onClick={handleFinalSubmit}
+                className={`px-4 py-2 text-xs font-bold text-white rounded-xl transition-all shadow-md flex items-center gap-1.5 ${
+                  isPengurus
+                    ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
+                    : 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/20'
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{isPengurus ? 'Ya, Simpan Pembayaran' : 'Ya, Kirim Konfirmasi'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
