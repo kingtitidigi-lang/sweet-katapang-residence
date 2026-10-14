@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { X, TrendingUp, TrendingDown, CheckCircle2 } from 'lucide-react';
-import { TipeTransaksi, KategoriKas, KategoriPemasukan, KategoriPengeluaran } from '../types';
+import React, { useState, useEffect } from 'react';
+import { X, TrendingUp, TrendingDown, CheckCircle2, Edit3, AlertCircle } from 'lucide-react';
+import { TipeTransaksi, KategoriKas, KategoriPemasukan, KategoriPengeluaran, KasTransaction } from '../types';
 import { formatRupiah, getTodayDateStr } from '../utils/formatters';
 
 interface ModalTambahKasProps {
   isOpen: boolean;
   onClose: () => void;
   initialType?: TipeTransaksi;
+  kasToEdit?: KasTransaction | null;
   onSubmit: (data: {
+    id?: string;
     tipe: TipeTransaksi;
     kategori: KategoriKas;
     nominal: number;
@@ -39,6 +41,7 @@ export const ModalTambahKas: React.FC<ModalTambahKasProps> = ({
   isOpen,
   onClose,
   initialType = 'PENGELUARAN',
+  kasToEdit = null,
   onSubmit,
 }) => {
   const [tipe, setTipe] = useState<TipeTransaksi>(initialType);
@@ -51,16 +54,30 @@ export const ModalTambahKas: React.FC<ModalTambahKasProps> = ({
   const [metode, setMetode] = useState<'Transfer Bank' | 'Tunai / Cash'>('Transfer Bank');
   const [penanggungJawab, setPenanggungJawab] = useState<string>('Bendahara');
 
-  // Reset when initialType or isOpen changes
-  React.useEffect(() => {
+  // Reset or fill when initialType, kasToEdit or isOpen changes
+  useEffect(() => {
     if (isOpen) {
-      setTipe(initialType);
-      setKategori(initialType === 'PEMASUKAN' ? 'Donasi Warga' : 'Keamanan / Satpam');
-      setTanggal(getTodayDateStr());
-      setNominal('');
-      setDeskripsi('');
+      if (kasToEdit) {
+        setTipe(kasToEdit.tipe);
+        setKategori(kasToEdit.kategori);
+        setTanggal(kasToEdit.tanggal);
+        setNominal(String(kasToEdit.nominal));
+        setDeskripsi(kasToEdit.deskripsi);
+        setMetode(
+          kasToEdit.metode === 'Tunai / Cash' ? 'Tunai / Cash' : 'Transfer Bank'
+        );
+        setPenanggungJawab(kasToEdit.penanggungJawab || 'Bendahara');
+      } else {
+        setTipe(initialType);
+        setKategori(initialType === 'PEMASUKAN' ? 'Donasi Warga' : 'Keamanan / Satpam');
+        setTanggal(getTodayDateStr());
+        setNominal('');
+        setDeskripsi('');
+        setMetode('Transfer Bank');
+        setPenanggungJawab('Bendahara');
+      }
     }
-  }, [initialType, isOpen]);
+  }, [initialType, isOpen, kasToEdit]);
 
   if (!isOpen) return null;
 
@@ -73,6 +90,7 @@ export const ModalTambahKas: React.FC<ModalTambahKasProps> = ({
     }
 
     onSubmit({
+      id: kasToEdit ? kasToEdit.id : undefined,
       tipe,
       kategori,
       nominal: parsedNominal,
@@ -89,23 +107,38 @@ export const ModalTambahKas: React.FC<ModalTambahKasProps> = ({
       <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-slate-200 overflow-hidden my-8">
         {/* Header */}
         <div
-          className={`px-5 py-4 flex items-center justify-between text-white ${tipe === 'PEMASUKAN' ? 'bg-emerald-700' : 'bg-rose-700'
-            }`}
+          className={`px-5 py-4 flex items-center justify-between text-white ${
+            kasToEdit
+              ? 'bg-slate-900 border-b border-slate-800'
+              : tipe === 'PEMASUKAN'
+              ? 'bg-emerald-700'
+              : 'bg-rose-700'
+          }`}
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-              {tipe === 'PEMASUKAN' ? (
-                <TrendingUp className="w-4 h-4 text-white" />
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+              kasToEdit ? 'bg-blue-500/20 text-blue-400' : 'bg-white/20 text-white'
+            }`}>
+              {kasToEdit ? (
+                <Edit3 className="w-4 h-4" />
+              ) : tipe === 'PEMASUKAN' ? (
+                <TrendingUp className="w-4 h-4" />
               ) : (
-                <TrendingDown className="w-4 h-4 text-white" />
+                <TrendingDown className="w-4 h-4" />
               )}
             </div>
             <div>
               <h3 className="text-sm font-bold">
-                {tipe === 'PEMASUKAN' ? 'Catat Pemasukan Kas' : 'Catat Biaya Pengeluaran'}
+                {kasToEdit
+                  ? `Edit Transaksi Mutasi Kas (#${kasToEdit.id})`
+                  : tipe === 'PEMASUKAN'
+                  ? 'Catat Pemasukan Kas'
+                  : 'Catat Biaya Pengeluaran'}
               </h3>
               <p className="text-[11px] text-white/80">
-                Mutasi otomatis memperbarui buku kas & saldo berjalan komplek
+                {kasToEdit
+                  ? 'Perbarui rincian transaksi kas untuk menyesuaikan jurnal & saldo buku kas'
+                  : 'Mutasi otomatis memperbarui buku kas & saldo berjalan komplek'}
               </p>
             </div>
           </div>
@@ -119,6 +152,15 @@ export const ModalTambahKas: React.FC<ModalTambahKasProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
+          {/* Notification for IPL linked mutation */}
+          {kasToEdit?.refId && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">Transaksi Pembayaran IPL Warga:</span> Mutasi ini terhubung dengan setoran IPL. Mengubah nominal atau rincian di sini akan memperbarui catatan di Jurnal Buku Kas.
+              </div>
+            </div>
+          )}
           {/* Tipe Selector Switch */}
           <div>
             <label className="block font-semibold text-slate-700 mb-1">
@@ -271,13 +313,16 @@ export const ModalTambahKas: React.FC<ModalTambahKasProps> = ({
             </button>
             <button
               type="submit"
-              className={`px-5 py-2 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 ${tipe === 'PEMASUKAN'
+              className={`px-5 py-2 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 ${
+                kasToEdit
+                  ? 'bg-blue-600 hover:bg-blue-500'
+                  : tipe === 'PEMASUKAN'
                   ? 'bg-emerald-600 hover:bg-emerald-500'
                   : 'bg-rose-600 hover:bg-rose-500'
-                }`}
+              }`}
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Simpan ke Jurnal Buku Kas</span>
+              <span>{kasToEdit ? 'Simpan Perubahan Transaksi' : 'Simpan ke Jurnal Buku Kas'}</span>
             </button>
           </div>
         </form>

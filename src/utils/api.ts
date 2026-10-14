@@ -74,7 +74,8 @@ export async function apiRejectIPL(transactionId: string): Promise<boolean> {
   }
 }
 
-export async function apiAddKas(params: {
+export async function apiSaveKas(params: {
+  id?: string;
   tipe: TipeTransaksi;
   kategori: KategoriKas;
   nominal: number;
@@ -93,10 +94,12 @@ export async function apiAddKas(params: {
     const data = await res.json();
     return data.transaction;
   } catch (err) {
-    console.warn('API error on add kas:', err);
+    console.warn('API error on save kas:', err);
     return null;
   }
 }
+
+export const apiAddKas = apiSaveKas;
 
 export async function apiDeleteKas(id: string): Promise<boolean> {
   try {

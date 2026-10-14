@@ -248,14 +248,32 @@ app.post('/api/ipl/reject', (req, res) => {
   res.json({ success: true, deletedId: transactionId });
 });
 
-// 4. Add Cash Mutation (General Income or Expense)
+// 4. Add or Update Cash Mutation (General Income or Expense)
 app.post('/api/kas', (req, res) => {
-  const { tipe, kategori, nominal, tanggal, deskripsi, metode, penanggungJawab } = req.body;
+  const { id, tipe, kategori, nominal, tanggal, deskripsi, metode, penanggungJawab } = req.body;
   if (!nominal || !tanggal || !deskripsi) {
     return res.status(400).json({ error: 'Data transaksi kas tidak lengkap' });
   }
 
   const db = getDatabase();
+  if (id) {
+    const idx = db.kasTransactions.findIndex((k: any) => k.id === id);
+    if (idx !== -1) {
+      db.kasTransactions[idx] = {
+        ...db.kasTransactions[idx],
+        tanggal,
+        tipe,
+        kategori,
+        nominal: Number(nominal),
+        deskripsi,
+        metode,
+        penanggungJawab,
+      };
+      saveDatabase(db);
+      return res.json({ success: true, transaction: db.kasTransactions[idx] });
+    }
+  }
+
   const newTx = {
     id: `kas-${Date.now().toString(36)}`,
     tanggal,

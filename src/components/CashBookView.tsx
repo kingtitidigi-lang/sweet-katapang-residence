@@ -8,6 +8,7 @@ import {
   Download,
   Printer,
   Trash2,
+  Pencil,
   Calendar,
   CreditCard,
   Building,
@@ -25,6 +26,7 @@ interface CashBookViewProps {
   isLoggedIn?: boolean;
   currentUser?: AuthUser | null;
   onOpenKasModal: (type: 'PEMASUKAN' | 'PENGELUARAN') => void;
+  onEditTransaction: (tx: KasTransaction) => void;
   onDeleteTransaction: (id: string) => void;
   onRequireLogin?: () => void;
 }
@@ -37,6 +39,7 @@ export const CashBookView: React.FC<CashBookViewProps> = ({
   isLoggedIn = false,
   currentUser,
   onOpenKasModal,
+  onEditTransaction,
   onDeleteTransaction,
   onRequireLogin,
 }) => {
@@ -363,13 +366,22 @@ export const CashBookView: React.FC<CashBookViewProps> = ({
 
                   {/* Action */}
                   <td className="py-3 px-2 text-center no-print">
-                    <button
-                      onClick={() => onDeleteTransaction(tx.id)}
-                      title="Hapus / Void Transaksi"
-                      className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        onClick={() => onEditTransaction(tx)}
+                        title="Edit / Ubah Transaksi"
+                        className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => onDeleteTransaction(tx.id)}
+                        title="Hapus / Void Transaksi"
+                        className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

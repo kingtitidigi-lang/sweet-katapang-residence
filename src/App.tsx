@@ -22,6 +22,7 @@ import {
   apiRecordIPL,
   apiValidateIPL,
   apiRejectIPL,
+  apiSaveKas,
   apiAddKas,
   apiDeleteKas,
   apiSaveWarga,
@@ -160,6 +161,7 @@ export default function App() {
 
   const [isKasModalOpen, setIsKasModalOpen] = useState(false);
   const [kasModalType, setKasModalType] = useState<TipeTransaksi>('PENGELUARAN');
+  const [kasToEdit, setKasToEdit] = useState<KasTransaction | null>(null);
 
   const [isWargaModalOpen, setIsWargaModalOpen] = useState(false);
   const [wargaToEdit, setWargaToEdit] = useState<Warga | null>(null);
@@ -548,8 +550,9 @@ export default function App() {
     }
   };
 
-  // Handle Adding Manual Cash Transaction (General Income or Expense)
-  const handleAddKas = async (data: {
+  // Handle Adding or Updating Manual Cash Transaction (General Income or Expense)
+  const handleSaveKas = async (data: {
+    id?: string;
     tipe: TipeTransaksi;
     kategori: KategoriKas;
     nominal: number;
@@ -558,6 +561,42 @@ export default function App() {
     metode: 'Transfer Bank' | 'Tunai / Cash';
     penanggungJawab: string;
   }) => {
+    if (data.id) {
+      // 1. UPDATE MODE
+      const existing = kasTransactions.find((k) => k.id === data.id);
+      const updatedTx: KasTransaction = {
+        ...(existing || {}),
+        id: data.id,
+        tanggal: data.tanggal,
+        tipe: data.tipe,
+        kategori: data.kategori,
+        nominal: data.nominal,
+        deskripsi: data.deskripsi,
+        metode: data.metode,
+        penanggungJawab: data.penanggungJawab,
+      };
+
+      if (isFirebaseConfigured()) {
+        showToast('info', `Menyimpan perubahan ${updatedTx.kategori} ke Firebase...`, 2000);
+        saveKasToFirestore(updatedTx).then((res) => {
+          if (res.success) {
+            showToast('success', `Perubahan transaksi kas berhasil disimpan ke Firebase!`);
+          } else {
+            showToast('error', `Gagal menyimpan ke Firebase: ${res.error}`);
+          }
+        });
+      } else {
+        await apiSaveKas(data);
+        showToast('success', `Perubahan transaksi kas (${formatRupiah(updatedTx.nominal)}) tersimpan.`);
+      }
+
+      const updatedKasList = kasTransactions.map((k) => (k.id === data.id ? updatedTx : k));
+      persistState(wargaList, iplTransactions, iplItems, updatedKasList);
+      setKasToEdit(null);
+      return;
+    }
+
+    // 2. CREATE NEW MODE
     let newTx: KasTransaction;
 
     if (isFirebaseConfigured()) {
@@ -589,7 +628,7 @@ export default function App() {
       });
     } else {
       // 2. MODE LOKAL: Fallback simpan ke Backend lokal (db.json)
-      const apiResult = await apiAddKas(data);
+      const apiResult = await apiSaveKas(data);
       newTx = apiResult || {
         id: `kas-${Date.now().toString(36)}`,
         tanggal: data.tanggal,
@@ -609,6 +648,7 @@ export default function App() {
 
     const newKasList = [newTx, ...kasTransactions];
     persistState(wargaList, iplTransactions, iplItems, newKasList);
+    setKasToEdit(null);
   };
 
   // Handle Delete Cash Transaction
@@ -873,6 +913,7 @@ export default function App() {
                 handleRequireLogin('Silakan login sebagai Pengurus untuk mencatat kas masuk atau keluar.');
                 return;
               }
+              setKasToEdit(null);
               setKasModalType(type);
               setIsKasModalOpen(true);
             }}
@@ -936,7 +977,17 @@ export default function App() {
                 handleRequireLogin('Silakan login sebagai Pengurus untuk mencatat transaksi kas.');
                 return;
               }
+              setKasToEdit(null);
               setKasModalType(type);
+              setIsKasModalOpen(true);
+            }}
+            onEditTransaction={(tx) => {
+              if (!isLoggedIn) {
+                handleRequireLogin('Silakan login sebagai Pengurus untuk mengubah transaksi kas.');
+                return;
+              }
+              setKasToEdit(tx);
+              setKasModalType(tx.tipe);
               setIsKasModalOpen(true);
             }}
             onDeleteTransaction={(id) => {
@@ -1027,9 +1078,13 @@ export default function App() {
 
       <ModalTambahKas
         isOpen={isKasModalOpen}
-        onClose={() => setIsKasModalOpen(false)}
+        onClose={() => {
+          setIsKasModalOpen(false);
+          setKasToEdit(null);
+        }}
         initialType={kasModalType}
-        onSubmit={handleAddKas}
+        kasToEdit={kasToEdit}
+        onSubmit={handleSaveKas}
       />
 
       <ModalWarga

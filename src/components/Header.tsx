@@ -175,7 +175,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
 
             {/* Backup & Reset Controls (Khusus Pengurus / Admin) */}
-            {/* {isPengurus && (
+            {isPengurus && (
               <div className="flex items-center gap-1 pl-1 border-l border-slate-800">
                 <button
                   onClick={onExportBackup}
@@ -195,7 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="hidden sm:inline">Reset</span>
                 </button>
               </div>
-            )} */}
+            )}
           </div>
         </div>
 
