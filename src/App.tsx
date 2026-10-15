@@ -348,12 +348,12 @@ export default function App() {
           if (res.success) {
             showToast(
               'success',
-              `Pembayaran IPL Kavling ${transaction.blok} (${items.length} bulan) LUNAS & langsung tersimpan ke Firebase!`
+              `Pembayaran IPL Kavling ${transaction.blok} (${items.length} bulan) LUNAS & langsung tersimpan!`
             );
           } else {
             showToast(
               'error',
-              `Gagal menyimpan ke Firebase: ${res.error}`
+              `Gagal menyimpan: ${res.error}`
             );
           }
         });
@@ -368,7 +368,7 @@ export default function App() {
           } else {
             showToast(
               'error',
-              `Gagal mengirim konfirmasi ke Firebase: ${res.error}`
+              `Gagal mengirim konfirmasi: ${res.error}`
             );
           }
         });
@@ -460,15 +460,15 @@ export default function App() {
 
     if (isFirebaseConfigured()) {
       // 1. MODE CLOUD AKTIF: Langsung simpan ke Firebase Firestore saja (tanpa db.json)
-      showToast('info', `Menyimpan validasi pembayaran ke Firebase...`, 2000);
+      showToast('info', `Menyimpan validasi pembayaran...`, 2000);
       saveIPLToFirestore(updatedTx, updatedItems, newKasRecord).then((res) => {
         if (res.success) {
           showToast(
             'success',
-            `Validasi IPL Kavling ${updatedTx.blok} LUNAS & langsung tersimpan ke Firebase!`
+            `Validasi IPL Kavling ${updatedTx.blok} LUNAS & langsung tersimpan!`
           );
         } else {
-          showToast('error', `Gagal validasi ke Firebase: ${res.error}`);
+          showToast('error', `Gagal validasi: ${res.error}`);
         }
       });
     } else {
@@ -577,12 +577,12 @@ export default function App() {
       };
 
       if (isFirebaseConfigured()) {
-        showToast('info', `Menyimpan perubahan ${updatedTx.kategori} ke Firebase...`, 2000);
+        showToast('info', `Menyimpan perubahan ${updatedTx.kategori} ...`, 2000);
         saveKasToFirestore(updatedTx).then((res) => {
           if (res.success) {
-            showToast('success', `Perubahan transaksi kas berhasil disimpan ke Firebase!`);
+            showToast('success', `Perubahan transaksi kas berhasil disimpan!`);
           } else {
-            showToast('error', `Gagal menyimpan ke Firebase: ${res.error}`);
+            showToast('error', `Gagal menyimpan: ${res.error}`);
           }
         });
       } else {
@@ -617,12 +617,12 @@ export default function App() {
         if (res.success) {
           showToast(
             'success',
-            `${newTx.kategori} (${formatRupiah(newTx.nominal)}) berhasil tersimpan langsung ke Firebase!`
+            `${newTx.kategori} (${formatRupiah(newTx.nominal)}) berhasil tersimpan langsung!`
           );
         } else {
           showToast(
             'error',
-            `Gagal menyimpan ke Firebase: ${res.error}`
+            `Gagal menyimpan: ${res.error}`
           );
         }
       });
@@ -744,12 +744,12 @@ export default function App() {
         if (res.success) {
           showToast(
             'success',
-            `Data warga kavling ${savedWargaObj.blok} (${savedWargaObj.nama}) tersimpan langsung ke Firebase!`
+            `Data warga kavling ${savedWargaObj.blok} (${savedWargaObj.nama}) tersimpan langsung!`
           );
         } else {
           showToast(
             'error',
-            `Gagal menyimpan ke Firebase: ${res.error}`
+            `Gagal menyimpan: ${res.error}`
           );
         }
       });

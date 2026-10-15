@@ -161,7 +161,7 @@ export const ModalFirebaseConfig: React.FC<ModalFirebaseConfigProps> = ({
         if (res.success) {
             setStatusMsg({
                 type: 'success',
-                text: `Sukses! Seluruh data (${wargaList.length} warga & ${iplTransactions.length} transaksi) berhasil diunggah ke Firestore Cloud!`,
+                text: `Sukses! Seluruh data (${wargaList.length} warga & ${iplTransactions.length} transaksi) berhasil diunggah Cloud!`,
             });
         } else {
             setStatusMsg({
@@ -215,8 +215,8 @@ export const ModalFirebaseConfig: React.FC<ModalFirebaseConfigProps> = ({
                     {/* Status Badge */}
                     <div
                         className={`p-4 rounded-xl border flex items-center justify-between ${isConnected
-                                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                                : 'bg-amber-50 border-amber-200 text-amber-900'
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                            : 'bg-amber-50 border-amber-200 text-amber-900'
                             }`}
                     >
                         <div className="flex items-center gap-3">
@@ -228,7 +228,7 @@ export const ModalFirebaseConfig: React.FC<ModalFirebaseConfigProps> = ({
                             <div>
                                 <p className="font-bold text-sm">
                                     {isConnected
-                                        ? `Terhubung ke Firebase (Project: ${projectId || 'Aktif'})`
+                                        ? `Terhubung (Project: ${projectId || 'Aktif'})`
                                         : 'Mode Offline / Penyimpanan Lokal Aktif'}
                                 </p>
                                 <p className="text-xs text-slate-600">
@@ -252,10 +252,10 @@ export const ModalFirebaseConfig: React.FC<ModalFirebaseConfigProps> = ({
                     {statusMsg && (
                         <div
                             className={`p-3.5 rounded-xl text-sm flex items-start gap-2.5 border ${statusMsg.type === 'success'
-                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                                    : statusMsg.type === 'error'
-                                        ? 'bg-rose-50 border-rose-200 text-rose-800'
-                                        : 'bg-blue-50 border-blue-200 text-blue-800'
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                : statusMsg.type === 'error'
+                                    ? 'bg-rose-50 border-rose-200 text-rose-800'
+                                    : 'bg-blue-50 border-blue-200 text-blue-800'
                                 }`}
                         >
                             {statusMsg.type === 'success' && <CheckCircle className="w-5 h-5 shrink-0 text-emerald-600 mt-0.5" />}

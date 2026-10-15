@@ -175,7 +175,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
 
             {/* Backup & Reset Controls (Khusus Pengurus / Admin) */}
-            {isPengurus && (
+            {isSuperAdmin && (
               <div className="flex items-center gap-1 pl-1 border-l border-slate-800">
                 <button
                   onClick={onExportBackup}

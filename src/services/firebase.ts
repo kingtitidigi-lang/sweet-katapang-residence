@@ -272,7 +272,7 @@ export async function syncLocalDataToFirestore(data: {
         return { success: true };
     } catch (err: any) {
         console.error('Failed to batch upload to Firestore:', err);
-        let msg = err.message || 'Gagal menyimpan ke Firestore';
+        let msg = err.message || 'Gagal menyimpan';
         if (err.code === 'permission-denied') {
             msg = 'Izin ditolak (Permission Denied). Buka tab "Rules" di Firestore Database Anda dan ubah menjadi: allow read, write: if true;';
         } else if (err.code === 'unavailable' || err.code === 'not-found') {
@@ -363,7 +363,7 @@ export async function saveWargaToFirestore(warga: Warga): Promise<{ success: boo
         return { success: true };
     } catch (err: any) {
         console.error('Firebase save Warga failed:', err);
-        let msg = err.message || 'Gagal menyimpan data warga ke Firestore';
+        let msg = err.message || 'Gagal menyimpan data warga';
         if (err.code === 'permission-denied') {
             msg = 'Izin ditolak (Permission Denied). Security Rules di Firestore masih terkunci. Buka tab Rules dan ubah ke: allow read, write: if true;';
         }
@@ -410,7 +410,7 @@ export async function saveIPLToFirestore(
         return { success: true };
     } catch (err: any) {
         console.error('Firebase save IPL failed:', err);
-        let msg = err.message || 'Gagal menyimpan transaksi IPL ke Firestore';
+        let msg = err.message || 'Gagal menyimpan transaksi IPL';
         if (err.code === 'permission-denied') {
             msg = 'Izin ditolak (Permission Denied). Security Rules di Firestore masih terkunci. Buka tab Rules dan ubah ke: allow read, write: if true;';
         }
@@ -450,7 +450,7 @@ export async function saveKasToFirestore(kas: KasTransaction): Promise<{ success
         return { success: true };
     } catch (err: any) {
         console.error('Firebase save Kas failed:', err);
-        let msg = err.message || 'Gagal menyimpan kas ke Firestore';
+        let msg = err.message || 'Gagal menyimpan kas';
         if (err.code === 'permission-denied') {
             msg = 'Izin ditolak (Permission Denied). Security Rules di Firestore masih terkunci. Buka tab Rules dan ubah ke: allow read, write: if true;';
         }
@@ -466,6 +466,6 @@ export async function deleteKasFromFirestore(kasId: string): Promise<{ success: 
         return { success: true };
     } catch (err: any) {
         console.error('Firebase delete Kas failed:', err);
-        return { success: false, error: err.message || 'Gagal menghapus kas dari Firestore' };
+        return { success: false, error: err.message || 'Gagal menghapus kas' };
     }
 }
